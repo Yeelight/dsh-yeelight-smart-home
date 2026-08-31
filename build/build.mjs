@@ -4,7 +4,9 @@
  * protocol, and TypeScript declarations (lib/types).
  *
  * - Host: platform node, external @deepseek-ai/* (resolved at runtime by the
- *   harness), no other runtime deps.
+ *   harness), no other runtime deps. Bundled through esbuild's JS API rather
+ *   than its CLI shim so the same script runs on macOS and on Linux CI
+ *   (where the .bin shim is a native ELF binary node cannot parse).
  * - Client: the card is handwritten in `src/client/bundle.js` as the FACTORY
  *   BODY; we paste it verbatim into the window.__ModuleLoader__.load({id,
  *   factory}) envelope (the same contract @liustack/modsearch ships). No
@@ -12,35 +14,32 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { build } from 'esbuild'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const lib = join(root, 'lib')
 const types = join(lib, 'types')
-const esbuild = join(root, 'node_modules', '.bin', 'esbuild')
 
-function run(args) {
-  execFileSync(process.execPath, [esbuild, ...args], { stdio: 'inherit' })
-}
-
+rmSync(lib, { recursive: true, force: true })
 mkdirSync(types, { recursive: true })
 
 // 1. Host bundle. The package is "type": "module" and the harness imports
 // plugins as native ESM (see @liustack/modsearch), so emit ESM — a CJS
 // bundle inside a "type":"module" package would load as an empty namespace.
-run([
-  join('src', 'index.ts'),
-  '--bundle',
-  '--format=esm',
-  '--platform=node',
-  '--target=node22',
-  '--external:@deepseek-ai/*',
-  '--log-level=warning',
-  '--outfile=' + join(lib, 'index.js'),
-  '--sourcemap',
-])
+await build({
+  entryPoints: [join(root, 'src', 'index.ts')],
+  bundle: true,
+  format: 'esm',
+  platform: 'node',
+  target: 'node22',
+  external: ['@deepseek-ai/*'],
+  logLevel: 'warning',
+  outfile: join(lib, 'index.js'),
+  sourcemap: true,
+})
 
 // 2. Client bundle: paste the factory body into the loader envelope.
 const body = readFileSync(join(root, 'src', 'client', 'bundle.js'), 'utf8')
@@ -52,7 +51,6 @@ ${body}
   },
 });
 `
-mkdirSync(lib, { recursive: true })
 writeFileSync(join(lib, 'client.js'), envelope)
 
 // 3. Declarations: emit .d.ts from src/ into lib/types (keeps the source
@@ -84,6 +82,4 @@ export declare const inject: readonly string[]
 `,
 )
 
-// Copy NOTICE/LICENSE into the package? They live at repo root and are
-// listed in files[]; nothing to do here.
 console.log('[build] ok → lib/index.js, lib/client.js, lib/types/')
