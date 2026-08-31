@@ -38,7 +38,7 @@ dsh plugin --profile web add dsh-yeelight-smart-home
 
 ```json
 "dependencies": {
-  "dsh-yeelight-smart-home": "github:axdlee/dsh-yeelight-smart-home"
+  "dsh-yeelight-smart-home": "github:Yeelight/dsh-yeelight-smart-home"
 }
 ```
 
