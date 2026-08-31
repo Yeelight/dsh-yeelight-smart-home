@@ -1,0 +1,15 @@
+# dsh-yeelight-smart-home bundle layer.
+#
+# One row mounts both halves of the plugin:
+#   - the Host face resolves from the package root (lib/index.js);
+#   - the Browser face is served from the same row's `exports["./client"]`
+#     because the package declares `dsh.client` (client module system scan).
+#     No separate client row is needed.
+#
+# The host half registers its tools and the in-memory skill, and adds the
+# /yeelight web routes that the settings card talks to. Every seam is
+# optional: a headless or minimal profile keeps tools + skill and skips the
+# web routes.
+- insert:
+    - id: yeelight-smart-home
+      name: dsh-yeelight-smart-home

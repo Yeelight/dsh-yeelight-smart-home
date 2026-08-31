@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build cache / output
+*.tsbuildinfo
+coverage/
+dist/
+.cache/
+
+# macOS
+.DS_Store
+
+# Local test harness homes
+.dsh-test/
+.dsh/
+*.log
+
+# npm
+npm-debug.log*
+.npm-cache/
