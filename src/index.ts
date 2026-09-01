@@ -97,11 +97,13 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
       Object.assign(passThrough, {
         toJSON: () => ({ uid: 0, refs: { 0: { type: 'object', meta: { default: {} }, dict: {} } } }),
       })
-      ;(scope.settings as { register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown }).register(
+      ;(scope.settings as { register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown; describe(): unknown[] }).register(
         'yeelight-smart-home',
         passThrough,
         { base: {} },
       )
+      const namespaces = (scope.settings as { describe(): Array<{ ns: string }> }).describe()
+      console.error(`[yeelight-smart-home] settings registered, namespaces: ${namespaces.map((n) => n.ns).join(', ')}`)
     } catch (error) {
       console.error(`[yeelight-smart-home] settings namespace skipped: ${error instanceof Error ? error.message : String(error)}`)
     }
