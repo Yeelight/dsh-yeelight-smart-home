@@ -28,6 +28,20 @@
   ```
   Then authenticate: `yeelight-home auth login --qr`
 
+### One-click install from the settings card
+
+If the runtime is missing, the plugin's settings card shows an install guide
+with the channels available on your machine (Homebrew on macOS, npm, or the
+GitHub Release binary). Pick one and the plugin installs and verifies the
+runtime for you — no terminal needed.
+
+You can also pre-check what would run without installing:
+
+```bash
+curl -X POST -H 'content-type: application/json' -d '{"dry_run":true}' \
+  http://127.0.0.1:<port>/yeelight/install
+```
+
 ## Installation
 
 ```bash
@@ -57,7 +71,8 @@ Once installed, the plugin activates automatically on the next profile boot. The
 
 The web settings card (Plugins tab → Yeelight Smart Home) provides:
 - **Configuration** — runtime path, region, house ID, profile, locale, timeouts, logging
-- **Runtime status** — version, binary, authentication, doctor output
+- **Runtime status** — version, binary, authentication, doctor output;
+  one-click install guide when the runtime is missing
 - **Quick invoke** — intent selector, utterance input, JSON parameters, dry-run
 - **Invoke log** — browsable history with per-entry detail
 

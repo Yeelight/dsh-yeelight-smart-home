@@ -399,4 +399,28 @@ describe('installer', () => {
     expect(body.ok).toBe(true)
     expect(body.value.options.length).toBeGreaterThanOrEqual(1)
   })
+
+  it('rejects an unknown channel instead of falling back', async () => {
+    const { installRuntime } = require('../src/installer.ts') as never
+    const result = await (installRuntime as (env: NodeJS.ProcessEnv, o: { channel: string }) => Promise<{ ok: boolean; error?: string }>)(
+      { PATH: '/usr/bin:/bin' },
+      { channel: 'nonexistent' },
+    )
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('unknown install channel')
+  })
+
+  it('install route dry-run resolves a channel without executing', async () => {
+    const home = tmpHome()
+    const req = fakeReq('POST', '/yeelight/install', JSON.stringify({ dry_run: true }))
+    const res = fakeRes()
+    await registerRouteWithEnv('/yeelight/install', home, { PATH: '/usr/bin:/bin' }, req, res)
+    const body = (await res.json()) as { ok: boolean; value: { dryRun: boolean; chosen: { channel: string } | null } }
+    expect(body.ok).toBe(true)
+    expect(body.value.dryRun).toBe(true)
+    // chosen may be null when no install channel is available on PATH
+    if (body.value.chosen !== null) {
+      expect(['npm', 'npx', 'download', 'brew']).toContain(body.value.chosen.channel)
+    }
+  })
 })

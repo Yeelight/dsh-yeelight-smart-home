@@ -239,8 +239,16 @@ async function dispatch(req: IncomingMessage, res: ServerResponse, service: Rout
       }
       const body = (await readBody(req)) as Record<string, unknown>
       const progress: InstallProgress[] = []
+      const channel = typeof body?.channel === 'string' ? (body.channel as InstallChannel) : undefined
+      if (body?.dry_run === true) {
+        // Preview mode: resolve the channel without executing anything.
+        const preview = detectInstallOptions(service.env)
+        const chosen = channel !== undefined ? preview.find((o) => o.channel === channel) : preview.find((o) => o.available)
+        send(res, 200, { ok: true, value: { dryRun: true, chosen: chosen ?? null } })
+        return
+      }
       const result = await installRuntime(service.env, {
-        channel: typeof body?.channel === 'string' ? (body.channel as InstallChannel) : undefined,
+        channel,
         timeoutMs: typeof body?.timeout_ms === 'number' ? body.timeout_ms : undefined,
         onProgress: (p) => progress.push(p),
       })

@@ -28,6 +28,19 @@
   ```
   安装后认证：`yeelight-home auth login --qr`
 
+### 设置卡片一键安装
+
+如果未安装运行时，插件的设置卡片会显示安装引导，列出本机可用的安装渠道
+（macOS 的 Homebrew、npm、或 GitHub Release 二进制）。选择一个渠道即可自动
+安装并验证运行时，无需打开终端。
+
+也可以先预览将要执行的安装（不实际安装）：
+
+```bash
+curl -X POST -H 'content-type: application/json' -d '{"dry_run":true}' \
+  http://127.0.0.1:<端口>/yeelight/install
+```
+
 ## 安装
 
 ```bash
@@ -57,7 +70,7 @@ dsh plugin --profile web add dsh-yeelight-smart-home
 
 Web 设置卡片（插件选项卡 → Yeelight 智能家居）提供：
 - **配置** — 运行时路径、区域、家庭 ID、配置档、语言、超时、日志
-- **运行时状态** — 版本、可执行文件、认证、诊断输出
+- **运行时状态** — 版本、可执行文件、认证、诊断输出；未安装时提供一键安装引导
 - **快速调用** — 意图选择器、请求描述输入、JSON 参数、干跑模式
 - **调用日志** — 可浏览的历史记录，支持逐条查看详情
 

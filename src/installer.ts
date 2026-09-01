@@ -153,8 +153,20 @@ export async function installRuntime(
 ): Promise<InstallResult> {
   const report = (phase: InstallProgress['phase'], message: string, output?: string) => options.onProgress?.({ phase, message, output })
   const candidates = detectInstallOptions(env)
-  const wanted = options.channel !== undefined ? candidates.find((c) => c.channel === options.channel) : undefined
-  const chosen = wanted ?? candidates.find((c) => c.available)
+  let chosen: InstallOption | undefined
+  if (options.channel !== undefined) {
+    chosen = candidates.find((c) => c.channel === options.channel)
+    if (chosen === undefined) {
+      report('error', `未知安装渠道：${options.channel}`)
+      return { ok: false, output: '', error: `unknown install channel "${options.channel}"` }
+    }
+    if (!chosen.available) {
+      report('error', `安装渠道不可用：${chosen.label}（未找到 ${chosen.command}）`)
+      return { ok: false, output: '', error: `channel "${options.channel}" is not available` }
+    }
+  } else {
+    chosen = candidates.find((c) => c.available)
+  }
 
   if (chosen === undefined) {
     report('error', '没有可用的安装渠道：请先安装 npm 或 Homebrew。')

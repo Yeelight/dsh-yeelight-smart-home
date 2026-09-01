@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- One-click yeelight-home install guidance from the settings card:
+  - `GET /yeelight/install-options` — detect install channels (brew/npm/
+    scoop/download) available on the machine.
+  - `POST /yeelight/install` — run the install with progress reporting,
+    verify the binary afterwards, and support `dry_run` preview.
+  - Card UI: channel buttons + progress + result when the runtime is
+    missing.
+- `installRuntime` rejects unknown channels instead of falling back to
+  another installer.
+
 ## [0.1.0] - 2025-08-31
 
 ### Added
