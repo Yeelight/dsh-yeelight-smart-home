@@ -30,7 +30,7 @@ export interface PluginOptions {
 
 /** Anything exposing `inject(names, callback)` and `effect(...)` — the ctx seam, duck-typed. */
 interface InjectingContext {
-  inject(names: readonly string[], callback: (scope: never) => void): unknown
+  inject(names: readonly string[], callback: (scope: Record<string, unknown>) => void): unknown
   effect(callback: () => unknown, label?: string): void
   provide?(name: string, value: unknown): void
 }
@@ -71,18 +71,18 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
 
   // Model-facing tools (core). A missing 'tools' seam only logs; nothing here
   // blocks a boot.
-  ctx.inject(['tools'], (tools) => {
+  ctx.inject(['tools'], (scope) => {
     try {
-      registerTools(tools as ToolsSeam, service, logger)
+      registerTools(scope.tools as ToolsSeam, service, logger)
     } catch (error) {
       console.error(`[yeelight-smart-home] tool registration failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   })
 
   // In-memory skill so agents can load full domain instructions on demand.
-  ctx.inject(['skills'], (skills) => {
+  ctx.inject(['skills'], (scope) => {
     try {
-      const dispose = registerSkill(skills as SkillSeam, dir)
+      const dispose = registerSkill(scope.skills as SkillSeam, dir)
       if (typeof dispose === 'function') ctx.effect(() => dispose, 'yeelight-smart-home: skill')
     } catch (error) {
       console.error(`[yeelight-smart-home] skill registration failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -91,13 +91,13 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
 
   // The empty namespace makes the settings card dispatchable in the Plugins
   // tab; the values themselves live in the config file behind /yeelight.
-  ctx.inject(['settings'], (settings) => {
+  ctx.inject(['settings'], (scope) => {
     try {
       const passThrough = (value?: unknown): Record<string, unknown> => ({ ...((value ?? {}) as Record<string, unknown>) })
       Object.assign(passThrough, {
         toJSON: () => ({ uid: 0, refs: { 0: { type: 'object', meta: { default: {} }, dict: {} } } }),
       })
-      ;(settings as { register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown }).register(
+      ;(scope.settings as { register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown }).register(
         'yeelight-smart-home',
         passThrough,
         { base: {} },
@@ -108,9 +108,9 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
   })
 
   // The settings card's host half.
-  ctx.inject(['webServer'], (webServer) => {
+  ctx.inject(['webServer'], (scope) => {
     try {
-      registerYeelightRoutes(webServer as WebServerSeam, routes)
+      registerYeelightRoutes(scope.webServer as WebServerSeam, routes)
     } catch (error) {
       console.error(`[yeelight-smart-home] /yeelight routes skipped: ${error instanceof Error ? error.message : String(error)}`)
     }

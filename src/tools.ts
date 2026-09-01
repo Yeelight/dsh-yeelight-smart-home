@@ -150,7 +150,17 @@ function registerInvokeTool(tools: ToolsSeam, service: YeelightService, logger: 
             },
             required: ['code', 'message'],
           },
-          result: { type: ['object', 'array', 'string', 'number', 'boolean', 'null'], description: 'Runtime structured result when the status is success or partial.' },
+          result: {
+            oneOf: [
+              { type: 'object' },
+              { type: 'array' },
+              { type: 'string' },
+              { type: 'number' },
+              { type: 'boolean' },
+              { type: 'null' },
+            ],
+            description: 'Runtime structured result when the status is success or partial.',
+          },
           runtime: {
             type: 'object',
             additionalProperties: false,
