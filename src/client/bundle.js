@@ -192,13 +192,17 @@ const TEXT = {
 }
 
 function labels(active) {
-  const lang = (
-    active ||
-    (typeof document !== 'undefined' ? document.documentElement.lang : '') ||
-    (typeof navigator !== 'undefined' ? navigator.language : '') ||
-    'en'
-  ).toLowerCase()
-  return lang.indexOf('zh') === 0 ? TEXT.zh : TEXT.en
+  var raw = ''
+  if (typeof active === 'string' && active.length > 0) {
+    raw = active
+  } else if (typeof document !== 'undefined' && typeof document.documentElement.lang === 'string') {
+    raw = document.documentElement.lang
+  }
+  if (typeof raw !== 'string' || raw.length === 0) {
+    if (typeof navigator !== 'undefined' && typeof navigator.language === 'string') raw = navigator.language
+  }
+  if (typeof raw !== 'string' || raw.length === 0) raw = 'en'
+  return raw.toLowerCase().indexOf('zh') === 0 ? TEXT.zh : TEXT.en
 }
 
 const QUICK_INTENTS = [
@@ -434,11 +438,12 @@ function ConfigCard(react, localeRef) {
           ? react.createElement(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-              keyValueRow(t, t.versionLabel, status.version ? `${status.version.version}${status.version.commit ? ` (${String(status.version.commit).slice(0, 7)})` : ''}` : t.versionUnknown),
-              keyValueRow(t, t.binLabel, status.bin),
-              keyValueRow(t, t.regionLabel, status.auth && status.auth.region ? status.auth.region : '—'),
-              keyValueRow(t, t.houseLabel, status.auth && status.auth.houseId ? status.auth.houseId : '—'),
+              keyValueRow(react, t, t.versionLabel, status.version ? `${status.version.version}${status.version.commit ? ` (${String(status.version.commit).slice(0, 7)})` : ''}` : t.versionUnknown),
+              keyValueRow(react, t, t.binLabel, status.bin),
+              keyValueRow(react, t, t.regionLabel, status.auth && status.auth.region ? status.auth.region : '—'),
+              keyValueRow(react, t, t.houseLabel, status.auth && status.auth.houseId ? status.auth.houseId : '—'),
               keyValueRow(
+                react,
                 t,
                 t.authLabel,
                 status.auth
@@ -664,7 +669,7 @@ function primaryButtonStyle(disabled) {
   }
 }
 
-function keyValueRow(t, label, value) {
+function keyValueRow(react, t, label, value) {
   return react.createElement(
     'div',
     { style: { display: 'flex', gap: 8, fontSize: 13, lineHeight: '20px' } },
@@ -953,88 +958,53 @@ function DetailView({ react, t, detail, setDetail }) {
 }
 
 function registerCard(ctx) {
-  console.error('[yeelight-card] registerCard called, typeof ctx.inject:', typeof ctx.inject)
-  if (typeof ctx.inject !== 'function') { console.error('[yeelight-card] ctx.inject not a function'); return }
+  if (typeof ctx.inject !== 'function') return
 
   const localeRef = { current: null }
   ctx.inject(['locale'], (scope) => {
-    localeRef.current = scope.locale
-    if (typeof scope.effect === 'function') {
-      scope.effect(
-        () => () => {
-          localeRef.current = null
-        },
-        'yeelight-smart-home: locale handle',
-      )
+    // scope.locale is the locale service object; getLocale().active yields the
+    // active locale string ('zh'/'en'). Store the string, never the service.
+    var localeSvc = scope.locale
+    localeRef.current = localeSvc && typeof localeSvc.getLocale === 'function' ? localeSvc.getLocale().active : 'en'
+    if (typeof localeSvc.subscribe === 'function') {
+      var unsub = localeSvc.subscribe(function() {
+        localeRef.current = localeSvc && typeof localeSvc.getLocale === 'function' ? localeSvc.getLocale().active : 'en'
+      })
+      if (typeof scope.effect === 'function') {
+        scope.effect(
+          function() { return unsub },
+          'yeelight-smart-home: locale subscription',
+        )
+      }
     }
   })
 
   ctx.inject(['slots'], (scope) => {
-    console.error('[yeelight-card] ctx.inject([slots]) callback fired, typeof scope.slots:', typeof scope.slots)
+    // Any response at all proves the host half exists; 404 means no web
+    // profile, so keep the card silent rather than erroring.
     fetch('/yeelight/config')
       .then((response) => {
-        console.error('[yeelight-card] fetch /yeelight/config status:', response.status)
-        if (response.status === 404) { console.error('[yeelight-card] 404 - skipping card mount'); return }
-        try {
-          mountCard(scope, localeRef)
-          console.error('[yeelight-card] mountCard completed')
-        } catch (error) {
-          console.error(`[yeelight-smart-home] settings card skipped: ${error instanceof Error ? error.message : String(error)}`)
-        }
+        if (response.status === 404) return
+        mountCard(scope, localeRef)
       })
-      .catch((err) => {
-        console.error('[yeelight-card] fetch /yeelight/config failed:', String(err))
-      })
+      .catch(() => {})
   })
 }
 
 function mountCard(ctx, localeRef) {
-  try { window.__yeelightCardState = 'mountCard entered' } catch(e) {}
   let react
   try {
     react = require('react')
-    try { window.__yeelightCardState = 'require react ok' } catch(e) {}
   } catch (error) {
-    try { window.__yeelightCardState = 'require react failed: ' + String(error) } catch(e) {}
     return
   }
   const Card = ConfigCard(react, localeRef)
-  try { window.__yeelightCardState = 'ConfigCard created' } catch(e) {}
   ctx.slots.inject('settings.plugin.item', function* () {
-    try { window.__yeelightCardState = 'slots.inject generator called' } catch(e) {}
     yield ctx.slots.register(
       { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
       Card,
     )
-    try { window.__yeelightCardState = 'slots.register completed' } catch(e) {}
   })
-  try { window.__yeelightCardState = 'slots.inject returned' } catch(e) {}
-  // DIAGNOSTIC: direct register to observe the true failure mode.
-  try {
-    var directDispose = ctx.slots.register(
-      { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 36 },
-      Card,
-    )
-    try { window.__yeelightCardState = 'DIRECT register OK type=' + typeof directDispose } catch(e) {}
-  } catch (err) {
-    try { window.__yeelightCardState = 'DIRECT register FAILED: ' + String(err) } catch(e) {}
-  }
-  // DIAGNOSTIC: check slot ledger for our entry
-  try {
-    var allEntries = ctx.slots.entries('settings.plugin.item')
-    var allKeys = allEntries.map(function(e) { return e.options.key })
-    var winners = ctx.slots.entriesOfSlot('settings.plugin.item')
-    var winnerKeys = winners.map(function(e) { return e.options.key })
-    window.__yeelightSlotDebug = JSON.stringify({
-      totalEntries: allEntries.length,
-      keys: allKeys,
-      winnerKeys: winnerKeys,
-      hasOurEntry: allKeys.indexOf('yeelight-smart-home') >= 0,
-      isWinner: winnerKeys.indexOf('yeelight-smart-home') >= 0,
-    })
-  } catch(e) {
-    window.__yeelightSlotDebug = 'SLOT DEBUG ERROR: ' + String(e)
-  }
 }
 
 function apply(ctx) {
