@@ -232,6 +232,21 @@ async function dispatch(req: IncomingMessage, res: ServerResponse, service: Rout
       send(res, 200, { ok: true, value: { options: detectInstallOptions(service.env) } })
       return
     }
+    case '/yeelight/debug/describe': {
+      if (method !== 'GET') {
+        send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })
+        return
+      }
+      const describe = (service as unknown as { settingsDescribe?: () => Array<{ ns: string }> }).settingsDescribe
+      send(res, 200, {
+        ok: true,
+        value: {
+          namespaces: describe ? describe().map((n) => n.ns) : [],
+          hasDescribe: typeof describe === 'function',
+        },
+      })
+      return
+    }
     case '/yeelight/install': {
       if (method !== 'POST') {
         send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })

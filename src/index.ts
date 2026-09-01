@@ -67,7 +67,10 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
     },
     patchConfig: (patch) => store.patch(patch),
     resetConfig: () => store.reset(),
+    settingsDescribe: () => settingsDescribeRef.current?.() ?? [],
   }
+
+  const settingsDescribeRef: { current: (() => Array<{ ns: string }>) | undefined } = { current: undefined }
 
   // Model-facing tools (core). A missing 'tools' seam only logs; nothing here
   // blocks a boot.
@@ -93,16 +96,17 @@ export function apply(ctx: InjectingContext, options: PluginOptions = {}): void 
   // tab; the values themselves live in the config file behind /yeelight.
   ctx.inject(['settings'], (scope) => {
     try {
+      const settingsScope = scope.settings as {
+        register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown
+        describe(): Array<{ ns: string }>
+      }
       const passThrough = (value?: unknown): Record<string, unknown> => ({ ...((value ?? {}) as Record<string, unknown>) })
       Object.assign(passThrough, {
         toJSON: () => ({ uid: 0, refs: { 0: { type: 'object', meta: { default: {} }, dict: {} } } }),
       })
-      ;(scope.settings as { register(ns: string, schema: unknown, opts: { base: Record<string, unknown> }): unknown; describe(): unknown[] }).register(
-        'yeelight-smart-home',
-        passThrough,
-        { base: {} },
-      )
-      const namespaces = (scope.settings as { describe(): Array<{ ns: string }> }).describe()
+      settingsScope.register('yeelight-smart-home', passThrough, { base: {} })
+      settingsDescribeRef.current = () => settingsScope.describe()
+      const namespaces = settingsScope.describe()
       console.error(`[yeelight-smart-home] settings registered, namespaces: ${namespaces.map((n) => n.ns).join(', ')}`)
     } catch (error) {
       console.error(`[yeelight-smart-home] settings namespace skipped: ${error instanceof Error ? error.message : String(error)}`)
