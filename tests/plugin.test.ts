@@ -366,3 +366,37 @@ function fakeRes(): ServerResponse & { statusCode: number; body: string; json: (
   }
   return res as never
 }
+describe('installer', () => {
+  it('detects install channels with availability flags', () => {
+    const { detectInstallOptions } = require('../src/installer.ts') as never
+    const opts = (detectInstallOptions as (env: NodeJS.ProcessEnv) => Array<{ channel: string; label: string; available: boolean; command: string; args: string[]; hint: string }>)({ PATH: '/usr/bin:/bin' })
+    expect(opts.length).toBeGreaterThanOrEqual(1)
+    const npm = opts.find((o) => o.channel === 'npm')
+    expect(npm).toBeDefined()
+    expect(['npm', 'npx']).toContain(npm!.command)
+    expect(typeof npm!.available).toBe('boolean')
+    // every option has the shape the card needs
+    for (const o of opts) {
+      expect(o.channel).toMatch(/^(brew|npm|scoop|download)$/)
+      expect(o.label.length).toBeGreaterThan(0)
+      expect(Array.isArray(o.args)).toBe(true)
+      expect(o.hint.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('detectInstallOptions honors YEELIGHT_HOME_BIN for the local bin path', () => {
+    const { localBinPath } = require('../src/installer.ts') as never
+    const p = (localBinPath as (env: NodeJS.ProcessEnv) => string)({ YEELIGHT_HOME_BIN: '/custom/bin/yeelight-home' })
+    expect(p).toBe('/custom/bin/yeelight-home')
+  })
+
+  it('routes expose install options', async () => {
+    const home = tmpHome()
+    const req = fakeReq('GET', '/yeelight/install-options')
+    const res = fakeRes()
+    await registerRouteWithEnv('/yeelight/install-options', home, { PATH: '/usr/bin:/bin' }, req, res)
+    const body = (await res.json()) as { ok: boolean; value: { options: Array<{ channel: string }> } }
+    expect(body.ok).toBe(true)
+    expect(body.value.options.length).toBeGreaterThanOrEqual(1)
+  })
+})

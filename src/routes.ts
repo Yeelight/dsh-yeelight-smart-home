@@ -7,6 +7,7 @@ import { runtimeStatus, resolveRuntimeBin } from './runtime.ts'
 import { runInvoke } from './tools.ts'
 import { DEFAULT_CONFIG, type InvokeLogEntry } from './types.ts'
 import type { YeelightConfig } from './types.ts'
+import { detectInstallOptions, installRuntime, type InstallChannel, type InstallProgress } from './installer.ts'
 
 export interface WebServerSeam {
   register(route: { kind: 'exact' | 'prefix'; path: string; handler: (req: IncomingMessage, res: ServerResponse) => void | Promise<void> }): unknown
@@ -221,6 +222,29 @@ async function dispatch(req: IncomingMessage, res: ServerResponse, service: Rout
     }
     case '/yeelight/request-id': {
       send(res, 200, { ok: true, value: { requestId: newRequestId() } })
+      return
+    }
+    case '/yeelight/install-options': {
+      if (method !== 'GET') {
+        send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })
+        return
+      }
+      send(res, 200, { ok: true, value: { options: detectInstallOptions(service.env) } })
+      return
+    }
+    case '/yeelight/install': {
+      if (method !== 'POST') {
+        send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })
+        return
+      }
+      const body = (await readBody(req)) as Record<string, unknown>
+      const progress: InstallProgress[] = []
+      const result = await installRuntime(service.env, {
+        channel: typeof body?.channel === 'string' ? (body.channel as InstallChannel) : undefined,
+        timeoutMs: typeof body?.timeout_ms === 'number' ? body.timeout_ms : undefined,
+        onProgress: (p) => progress.push(p),
+      })
+      send(res, 200, { ok: true, value: { result, progress } })
       return
     }
     default:

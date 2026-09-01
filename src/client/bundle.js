@@ -33,6 +33,16 @@ const TEXT = {
     statusTitle: 'Runtime status',
     statusMissing: 'yeelight-home runtime is not installed or not found.',
     statusHint: 'Install from Yeelight/yeelight-home Releases, or set binPath / YEELIGHT_HOME_BIN.',
+    installTitle: 'Install yeelight-home',
+    installSubtitle: 'The plugin needs the local yeelight-home CLI. Pick a channel:',
+    installChecking: 'checking install channels…',
+    installChoose: 'Install via',
+    installRun: 'Install',
+    installing: 'Installing…',
+    installOk: 'Installed',
+    installFail: 'Install failed',
+    installRefresh: 'Refresh status',
+    installNoChannel: 'No install channel available. Install npm or Homebrew first, or set binPath / YEELIGHT_HOME_BIN below.',
     authLabel: 'Auth',
     authLoggedIn: 'signed in',
     authOut: 'not signed in',
@@ -100,6 +110,16 @@ const TEXT = {
     statusTitle: '运行时状态',
     statusMissing: '未找到 yeelight-home 运行时。',
     statusHint: '请从 Yeelight/yeelight-home Releases 安装，或在下方配置 binPath / 环境变量 YEELIGHT_HOME_BIN。',
+    installTitle: '安装 yeelight-home',
+    installSubtitle: '插件依赖本地 yeelight-home CLI，请选择安装渠道：',
+    installChecking: '正在检测安装渠道…',
+    installChoose: '通过以下方式安装',
+    installRun: '安装',
+    installing: '安装中…',
+    installOk: '安装成功',
+    installFail: '安装失败',
+    installRefresh: '刷新状态',
+    installNoChannel: '没有可用的安装渠道。请先安装 npm 或 Homebrew，或在下方配置 binPath / YEELIGHT_HOME_BIN。',
     authLabel: '登录',
     authLoggedIn: '已登录',
     authOut: '未登录',
@@ -222,6 +242,9 @@ function ConfigCard(react, localeRef) {
     const [detail, setDetail] = useState(null)
     const [busy, setBusy] = useState(false)
     const [notice, setNotice] = useState(null)
+    const [installOpts, setInstallOpts] = useState(null)
+    const [installProgress, setInstallProgress] = useState(null)
+    const [installing, setInstalling] = useState(false)
 
     const reloadConfig = useCallback(async () => {
       const res = await fetch('/yeelight/config')
@@ -249,6 +272,43 @@ function ConfigCard(react, localeRef) {
       if (!body.ok) throw new Error(body.error?.message ?? t.errorLoad)
       setLogs(body.value.entries || [])
     }, [t.errorLoad])
+
+    const loadInstallOptions = useCallback(async () => {
+      try {
+        const res = await fetch('/yeelight/install-options')
+        if (!res.ok) return
+        const body = await res.json()
+        if (body.ok && Array.isArray(body.value.options)) setInstallOpts(body.value.options)
+      } catch {}
+    }, [])
+
+    const runInstall = useCallback(async (channel) => {
+      setInstalling(true)
+      setInstallProgress({ phase: 'installing', message: t.installing, channel })
+      try {
+        const res = await fetch('/yeelight/install', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ channel }),
+        })
+        const body = await res.json()
+        if (!body.ok) throw new Error(body.error?.message ?? t.errorRun)
+        const result = body.value.result
+        const progress = body.value.progress
+        const last = progress && progress.length > 0 ? progress[progress.length - 1] : null
+        setInstallProgress({
+          phase: result.ok ? 'done' : 'error',
+          message: result.ok ? (result.version ? `${t.installOk}: yeelight-home ${result.version} @ ${result.bin}` : t.installOk) : (result.error ?? t.installFail),
+          channel: result.channel,
+          output: result.output?.slice(0, 2000) ?? '',
+        })
+        if (result.ok) await reloadStatus()
+      } catch (error) {
+        setInstallProgress({ phase: 'error', message: `${t.installFail}: ${error.message || error}`, output: '' })
+      } finally {
+        setInstalling(false)
+      }
+    }, [t.installing, t.errorRun, t.installOk, t.installFail, reloadStatus])
 
     useEffect(() => {
       // Any response at all proves the host half exists. 404/network failure
@@ -384,6 +444,7 @@ function ConfigCard(react, localeRef) {
               { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
               react.createElement('div', { style: { color: 'var(--dsw-alias-state-error-primary, #e5484d)', fontSize: 13 } }, t.statusMissing),
               react.createElement('div', { style: HINT_STYLE }, t.statusHint),
+              installGuide(react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy),
               react.createElement('div', { style: { marginTop: 4 } },
                 react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.refresh),
               ),
@@ -484,6 +545,56 @@ function buttonStyle() {
     padding: '5px 12px',
     fontSize: 12,
   }
+}
+
+
+function installGuide(react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy) {
+  const { useState, useEffect } = react
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    if (!loaded) { setLoaded(true); loadInstallOptions() }
+  }, [loaded, loadInstallOptions])
+  if (installProgress) {
+    return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
+      react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
+      react.createElement('div', { style: { fontSize: 12, color: installProgress.phase === 'error' ? 'var(--dsw-alias-state-error-primary, #e5484d)' : 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, installProgress.message),
+      installProgress.output ? react.createElement('pre', { style: { fontSize: 11, maxHeight: 120, overflow: 'auto', background: 'rgba(0,0,0,0.2)', padding: 6, borderRadius: 4, margin: 0, whiteSpace: 'pre-wrap' } }, installProgress.output) : null,
+      installProgress.phase === 'done' ? react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.installRefresh) : null,
+    )
+  }
+  if (installing) {
+    return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
+      react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
+      react.createElement('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, t.installing),
+    )
+  }
+  if (!installOpts) {
+    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installChecking)
+  }
+  if (installOpts.length === 0) {
+    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installNoChannel)
+  }
+  const available = installOpts.filter((o) => o.available)
+  if (available.length === 0) {
+    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installNoChannel)
+  }
+  return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
+    react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
+    react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))' } }, t.installSubtitle),
+    react.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
+      available.map((opt) =>
+        react.createElement('button', {
+          key: opt.channel,
+          onClick: () => void runInstall(opt.channel),
+          disabled: installing,
+          style: { ...primaryButtonStyle(installing), fontSize: 12, padding: '5px 10px' },
+        }, opt.label),
+      ),
+    ),
+    react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', lineHeight: 1.5 } },
+      available.length > 0 ? `${t.installChoose} ${available.map((o) => o.label).join(' / ')}` : null,
+    ),
+  )
 }
 
 function primaryButtonStyle(disabled) {
