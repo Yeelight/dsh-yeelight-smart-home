@@ -1,0 +1,124 @@
+found at 41196
+		this._rootListeners.add(listener);
+					return () => {
+						this._rootListeners.delete(listener);
+					};
+				}
+			};
+			_scopes = /* @__PURE__ */ new Map();
+			_scopeRevision = 0;
+			_scopeListeners = /* @__PURE__ */ new Set();
+			_scopeRevisionSource = {
+				getSnapshot: () => this._scopeRevision,
+				subscribe: (listener) => {
+					this._scopeListeners.add(listener);
+					return () => {
+						this._scopeListeners.delete(listener);
+					};
+				}
+			};
+			/**
+			* @param ctx - owning root context.
+			*/
+			constructor(ctx) {
+				super(ctx, "slots");
+				this._core.onMutate((key) => {
+					ctx.emit("slots/changed", key);
+				});
+			}
+			/**
+			* Install an effect for each declaration lifetime of a slot. The callback
+			* runs synchronously when the declaration already exists; otherwise it runs
+			* inside the declaring `register()` call after the declaration is committed.
+			* Collapse disposes the effect and a later declaration runs it again.
+			* Callback effects are synchronous disposers; iterable effects install
+			* transactionally and dispose in reverse order. The controller belongs to
+			* the caller's fiber, so plugin unload cancels a pending wait and removes any
+			* active contribution.
+			*
+			* @param key - declared SlotMap key to depend on.
+			* @param callback - creates one disposer or an iterable of disposers.
+			* @returns idempotent disposer for the wait and active effect.
+			* @throws callback setup failures synchronously when the slot is already declared.
+			*/
+			inject(key, callback) {
+				const ctx = this.ctx;
+				const disposeController = ctx.effect(() => {
+					let active;
+					let activeEpoch;
+					let stopped = false;
+					let unsubscribe = () => {};
+					const stop = () => {
+						if (stopped) return;
+						stopped = true;
+						unsubscribe();
+						const dispose = active;
+						active = void 0;
+						activeEpoch = void 0;
+						dispose?.();
+					};
+					const reconcile = () => {
+						if (stopped) return;
+						const spec = this._core.specDynamic(key);
+						const epoch = this._core.declarationEpoch(key);
+						if (active !== void 0 && activeEpoch === epoch) return;
+						const dispose = active;
+						active = void 0;
+						activeEpoch = void 0;
+						dispose?.();
+						if (spec === void 0) return;
+						const disposeEffect = ctx.effect(callback, `slots.inject(${JSON.stringify(key)}): declaration`);
+						active = () => {
+							disposeEffect();
+						};
+						activeEpoch = epoch;
+					};
+					const changed = () => {
+						try {
+							reconcile();
+						} catch (error) {
+							if (error?.code === "INACTIVE_EFFECT") {
+								stop();
+								return;
+							}
+							stop();
+							const failure = error instanceof Error ? error : new Error(String(error));
+							queueMicrotask(() => {
+								throw failure;
+							});
+						}
+					};
+					unsubscribe = this._core.subscribeDeclaration(key, changed);
+					try {
+						reconcile();
+					} catch (error) {
+						stop();
+						throw error;
+					}
+					return stop;
+				}, `slots.inject(${JSON.stringify(key)})`);
+				return () => {
+					disposeController();
+				};
+			}
+			/**
+			* Install the shell's renderer (ui-renderer's createSlotRenderer product).
+			* Boot-once: a second install throws. Runs through the caller's ctx.effect,
+			* so shell fiber unload uninstalls the renderer.
+			* @param renderer - the outlet machinery implementing SlotRenderer.
+			*/
+			install(renderer) {
+				if (this._renderer !== void 0) throw new Error("slot renderer already installed (install() is boot-once)");
+				this.ctx.effect(() => {
+					this._renderer = renderer;
+					return () => {
+						if (this._renderer === renderer) this._renderer = void 0;
+					};
+				}, "slots.install()");
+			}
+			/**
+			* Install the locale face backing the `t` standard seat (the locale
+			* plugin's product; same boot-once discipline as the renderer install).
+			* Runs through the caller's ctx.effect, so the installing fiber's unload
+			* uninstalls the face.
+			* @param face - namespace binder +

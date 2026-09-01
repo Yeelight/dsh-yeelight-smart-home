@@ -1,0 +1,86 @@
+== specDynamic @ 9860 ==
+
+	* Dynamic-key escape hatch for spec lookup — renderers resolving keys they
+	* only hold as strings (generic dispatch) use this wide form; statically
+	* keyed callers use {@link SlotCore.spec}.
+	* @param key - candidate slot key.
+	* @returns the wide-typed spec, or undefined while undeclared.
+	*/
+	specDynamic(key) {
+		return this.records.get(key)?.spec;
+	}
+	/**
+	* Export the current declaration topology without components or executable hooks.
+	* @param root - exact Slot key to select; omitted returns every live root.
+	* @returns selected live Slot trees, or an empty array when `root` is unavailable.
+	*/
+	snapshot(root) {
+		const build = (name, seen) => {
+			const record = this.records.get(name);
+			if (record?.spec === void 0 || seen.has(name)) return void 0;
+			const branch = new Set(seen);
+			branch.add(name);
+			const active = new Set(this.entriesOfSlot(name));
+			const children = [...this.records.entries()].filter(([, candidate]) => candidate.spec !== void 0 && candidate.parent === name).flatMap(([child]) => {
+				const node = build(child, branch);
+				return node === void 0 ? [] : [node];
+			});
+			return {
+				name,
+				kind: record.spec.kind,
+				scope: record.spec.scope,
+	
+== subscribeDeclaration @ 1612 ==
+one a-priori declaration, seeded at construction
+* (single/root, declared by the framework) — the render tree's root hole.
+*
+* Change propagation contract: versions bump and {@link SlotCore.onMutate}
+* fires synchronously per mutation (registry state is consistent when they
+* fire); {@link SlotCore.subscribeDeclaration} fires synchronously for each
+* declaration lifetime boundary; {@link SlotCore.subscribe} notifications
+* batch per microtask, so N same-tick mutations produce one notification per
+* touched key. Entry crash reports ({@link SlotCore.reportEntryError}) ride
+* the same mutation channel when they abdicate, then notify
+* {@link SlotCore.onEntryError} synchronously.
+*/
+var SlotCore = class {
+	records = /* @__PURE__ */ new Map();
+	mutateListeners = /* @__PURE__ */ new Set();
+	/** Shared-handle scope ledger: handle → the scope it first mounted under + live mount count. */
+	handleScopes = /* @__PURE__ */ new Map();
+	dirty = /* @__PURE__ */ new Set();
+	flushScheduled = false;
+	/**
+	* Entries retired by an abdicating crash report
+	* ({@link SlotCore.reportEntryError}): excluded from
+	* {@link SlotCore.entriesOfSlot} projections for the rest of their
+	* registration's life, whi
+== declarationEpoch @ 2861 ==
+ (disposal authority remains with the registrant).
+	*/
+	abdicated = /* @__PURE__ */ new WeakSet();
+	entryErrorListeners = /* @__PURE__ */ new Set();
+	constructor() {
+		const root = this.record("root");
+		root.spec = {
+			kind: "single",
+			scope: "root"
+		};
+		root.declaredBy = "(built-in)";
+		root.declarationEpoch = 1;
+	}
+	register(options, component) {
+		const rec = this.records.get(options.name);
+		if (!rec?.spec) throw new Error(`slot "${options.name}" is not declared (a parent entry's children table must declare it)`);
+		const spec = rec.spec;
+		const priority = options.priority ?? 0;
+		const occupantHint = (occupant) => `at priority ${priority}${occupant.registrant !== void 0 ? ` (registered by ${occupant.registrant})` : ""} — register at a different priority to shadow it (lowest renders)`;
+		switch (spec.kind) {
+			case "single": {
+				const occupant = rec.entries.find((e) => (e.options.priority ?? 0) === priority);
+				if (occupant) throw new Error(`single slot "${options.name}" already has a registration ${occupantHint(occupant)}`);
+				break;
+			}
+			case "keyed": {
+				if (options.key === void 0) throw new Error(`keyed slot "${options.name}" requires options.key`);
+				c
