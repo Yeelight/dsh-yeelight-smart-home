@@ -1,7 +1,3 @@
-/* dsh-yeelight-smart-home — web client (lazy-CJS bundle). */
-window.__ModuleLoader__.load({
-  id: 'dsh-yeelight-smart-home',
-  factory: (require) => {
 /**
  * dsh-yeelight-smart-home — Browser face: the settings card (bundle body).
  *
@@ -1005,23 +1001,14 @@ function mountCard(ctx, localeRef) {
   const Card = ConfigCard(react, localeRef)
   try { window.__yeelightCardState = 'ConfigCard created' } catch(e) {}
   ctx.slots.inject('settings.plugin.item', function* () {
-    try { window.__yeelightCardState = 'ED: slots.inject generator called' } catch (e) {}
+    try { window.__yeelightCardState = 'slots.inject generator called' } catch(e) {}
     yield ctx.slots.register(
       { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
       Card,
     )
-    try { window.__yeelightCardState = 'ED: slots.register completed' } catch (e) {}
+    try { window.__yeelightCardState = 'slots.register completed' } catch(e) {}
   })
-  try { window.__yeelightCardState = 'ED: slots.inject returned; trying direct register' } catch (e) {}
-  try {
-    var directDispose = ctx.slots.register(
-      { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 36 },
-      Card,
-    )
-    try { window.__yeelightCardState = 'ED: direct register OK type=' + typeof directDispose } catch (e) {}
-  } catch (err) {
-    try { window.__yeelightCardState = 'ED: direct register FAILED ' + String(err) } catch (e) {}
-  }
+  try { window.__yeelightCardState = 'slots.inject returned' } catch(e) {}
 }
 
 function apply(ctx) {
@@ -1036,6 +1023,3 @@ exports.inject = [];
 // Exposed for the repo's tests only; not part of the plugin contract.
 exports.__card = { ConfigCard: ConfigCard, labels: labels };
 return module.exports;
-
-  },
-});
