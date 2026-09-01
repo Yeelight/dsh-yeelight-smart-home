@@ -1009,6 +1009,16 @@ function mountCard(ctx, localeRef) {
     try { window.__yeelightCardState = 'slots.register completed' } catch(e) {}
   })
   try { window.__yeelightCardState = 'slots.inject returned' } catch(e) {}
+  // DIAGNOSTIC: direct register to observe the true failure mode.
+  try {
+    var directDispose = ctx.slots.register(
+      { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 36 },
+      Card,
+    )
+    try { window.__yeelightCardState = 'DIRECT register OK type=' + typeof directDispose } catch(e) {}
+  } catch (err) {
+    try { window.__yeelightCardState = 'DIRECT register FAILED: ' + String(err) } catch(e) {}
+  }
 }
 
 function apply(ctx) {
