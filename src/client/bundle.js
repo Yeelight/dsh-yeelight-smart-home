@@ -1,193 +1,182 @@
 /**
- * dsh-yeelight-smart-home — Browser face: the settings card (bundle body).
+ * dsh-yeelight-smart-home — Browser face: the settings section (bundle body).
  *
- * This file is the FACTORY BODY of the lazy-CJS bundle protocol; build.mjs
- * wraps it in window.__ModuleLoader__.load({id, factory}). No build step and
- * no imports from dsh client packages: the zero-dependency stance of the
- * host half carries over.
- *
- * The card is contributed through the `settings.plugin.item` keyed slot (key
- * == the settings namespace the host half registers) and talks to the
- * plugin's own /yeelight loopback routes: configuration, runtime status,
- * quick invoke, and the invoke log. The browser never sees a token; only
- * paths and non-secret fields travel.
- *
- * Hand-written in the lazy-CJS bundle protocol with zero dsh imports, so the
- * package needs no build of the web client to render.
+ * Registered as a `settings.section` entry so it appears as a top-level page
+ * alongside "通用设置", "模型", "插件", etc.  No bundle step — the body is
+ * pasted verbatim into the lazy-CJS envelope by build.mjs.
  */
 
-const TEXT = {
+/* ── labels ──────────────────────────────────────────────────────────── */
+var TEXT = {
   en: {
     title: 'Yeelight Smart Home',
-    subtitle: 'Local yeelight-home runtime, plugin tools, and invoke log.',
-    open: 'Open',
-    close: 'Close',
-    loading: 'loading...',
-    refresh: 'Refresh',
+    subtitle: 'Local yeelight-home runtime, invoke tools, and invocation logs.',
+    status: 'Runtime Status',
+    auth: 'Authentication',
+    config: 'Configuration',
+    logs: 'Logs',
+    install: 'Runtime Installation',
+    saved: 'Saved.',
+    saving: 'Saving…',
     save: 'Save',
-    saving: 'saving...',
-    saved: 'saved',
     reset: 'Reset',
-    resetting: 'resetting...',
-    discard: 'Discard',
-    statusTitle: 'Runtime status',
-    statusMissing: 'yeelight-home runtime is not installed or not found.',
-    statusHint: 'Install from Yeelight/yeelight-home Releases, or set binPath / YEELIGHT_HOME_BIN.',
-    installTitle: 'Install yeelight-home',
-    installSubtitle: 'The plugin needs the local yeelight-home CLI. Pick a channel:',
-    installChecking: 'checking install channels…',
-    installChoose: 'Install via',
-    installRun: 'Install',
-    installing: 'Installing…',
-    installOk: 'Installed',
-    installFail: 'Install failed',
-    installRefresh: 'Refresh status',
-    installNoChannel: 'No install channel available. Install npm or Homebrew first, or set binPath / YEELIGHT_HOME_BIN below.',
-    authLabel: 'Auth',
-    authLoggedIn: 'signed in',
-    authOut: 'not signed in',
-    authHint: 'Run `yeelight-home auth login --qr` locally to sign in.',
-    authCopyCmd: 'Copy login command',
-    authCopied: 'Copied!',
-    authOpenTerminal: 'Open terminal and run',
-    authGuideTitle: 'Sign in to Yeelight',
-    authGuideDesc: 'Installation complete. Now sign in to your Yeelight account:',
-    authGuideStep1: '1. Open Terminal',
-    authGuideStep2: '2. Run: yeelight-home auth login --qr',
-    authGuideStep3: '3. Scan the QR code with your phone',
-    authGuideDone: 'After signing in, click Refresh to verify.',
-    doctorLabel: 'Doctor',
+    loading: 'Loading…',
+    refresh: 'Refresh',
+    close: 'Close',
+    open: 'Expand',
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    notInstalled: 'Not installed',
     versionLabel: 'Version',
     binLabel: 'Binary',
     regionLabel: 'Region',
-    houseLabel: 'House',
-    configTitle: 'Configuration',
-    binPath: 'Runtime path (binPath)',
-    binPathHint: 'Absolute yeelight-home executable; empty = auto-detect (PATH, YEELIGHT_HOME_BIN).',
-    region: 'Region (--region)',
-    regionHint: 'Empty uses the local Runtime default.',
-    houseId: 'Default house (--house-id)',
-    houseIdHint: 'Empty uses the Runtime selected home.',
-    profile: 'Runtime profile (--profile)',
-    profileHint: 'Empty uses the active profile.',
-    locale: 'Request locale',
-    dryRunDefault: 'Dry-run by default',
-    dryRunDefaultHint: 'Every invoke is a no-write preview until the request is resent without dry-run.',
-    requestTimeoutMs: 'Invoke timeout (ms)',
-    logRetention: 'Log retention (entries)',
-    logEnabled: 'Invoke log on',
-    uiStatusEnabled: 'Status section',
-    uiLogsEnabled: 'Log section',
-    uiQuickInvokeEnabled: 'Quick invoke section',
-    quickTitle: 'Quick invoke',
-    intent: 'Intent',
-    intentCustom: 'custom…',
-    utterance: 'Request (utterance)',
-    parameters: 'Parameters (JSON, optional)',
-    dryRun: 'Dry-run (no write)',
-    confirm: 'I confirm this live request',
-    run: 'Run',
-    running: 'running...',
-    result: 'Result',
-    resultEmpty: 'no result yet',
-    logsTitle: 'Invoke log',
-    logsEmpty: 'no entries',
-    clearLogs: 'Clear log',
-    detailTitle: 'Detail',
+    houseLabel: 'House ID',
+    profileLabel: 'Profile',
+    authLabel: 'Auth',
+    authLoggedIn: 'Logged in',
+    authOut: 'Not logged in',
+    authGuideTitle: 'Login via QR Code',
+    authGuideDesc: 'Authenticate with your Yeelight account:',
+    authGuideStep1: '1. Run this command in your terminal:',
+    authGuideStep2: '2. Scan the QR code shown in the terminal',
+    authGuideStep3: '3. After successful login, click "Refresh" below',
+    authGuideDone: 'You can now invoke Yeelight tools.',
+    authCopied: 'Copied!',
+    authCopyCmd: 'Copy',
+    authReAuth: 'Re-authenticate',
+    authTokenSource: 'via {source}',
+    configTitle: 'Settings',
+    configBinPath: 'Runtime Path',
+    configBinHint: 'Leave empty for auto-detect',
+    configRegion: 'Region',
+    configRegionHint: 'Yeelight service region',
+    configHouseId: 'House ID',
+    configHouseHint: 'Leave empty for default house',
+    configProfile: 'Profile',
+    configProfileHint: 'Leave empty for active profile',
+    configLocale: 'Language',
+    configDryRun: 'Dry run by default',
+    configDryRunHint: 'Preview effects without applying them',
+    configTimeout: 'Request Timeout (ms)',
+    configLogRetention: 'Log Retention',
+    configLogRetentionHint: 'Maximum log entries to keep',
+    configLogEnabled: 'Enable invocation logs',
+    configUiStatus: 'Show runtime status',
+    configUiLogs: 'Show log section',
+    configUiQuickInvoke: 'Show quick-invoke box',
+    statusMissing: 'Runtime not found',
+    statusHint: 'Install yeelight-home to use Yeelight Smart Home tools.',
+    installTitle: 'Install yeelight-home',
+    installSubtitle: 'Choose a method:',
+    installChecking: 'Checking available install methods…',
+    installNoChannel: 'No install method available',
+    installChoose: 'Install via',
+    installing: 'Installing…',
+    installOk: 'Installation complete',
+    installFail: 'Installation failed',
+    installRefresh: 'Refresh status',
+    installError: 'Installation failed',
+    installErrorHint: 'See the output below for details:',
+    logTitle: 'Invocation Logs',
+    logEmpty: 'No log entries yet.',
+    logDetail: 'View details',
     closeDetail: 'Close',
-    errorLoad: 'load failed',
-    errorSave: 'save failed',
-    errorRun: 'run failed',
-    errorClear: 'clear failed',
-    versionUnknown: 'unknown',
-    doctorFallback: 'doctor output unavailable',
+    detailTitle: 'Log Entry Details',
+    doctorLabel: 'Doctor diagnostics',
+    doctorFallback: 'No diagnostics available.',
+    optionLabel: 'Options',
+    retry: 'Retry',
+    notApplicable: '—',
     homeUnknown: '—',
+    unknown: 'Unknown',
+    errorLoad: 'Failed to load',
+    errorSave: 'Failed to save',
+    errorRun: 'Failed to run',
   },
   zh: {
     title: 'Yeelight 智能家居',
     subtitle: '本地 yeelight-home 运行时、插件工具与调用日志。',
-    open: '展开',
-    close: '收起',
+    status: '运行状态',
+    auth: '认证',
+    config: '配置',
+    logs: '日志',
+    install: '运行时安装',
+    saved: '已保存。',
+    saving: '保存中…',
+    save: '保存',
+    reset: '重置',
     loading: '加载中…',
     refresh: '刷新',
-    save: '保存',
-    saving: '保存中…',
-    saved: '已保存',
-    reset: '重置',
-    resetting: '重置中…',
-    discard: '放弃修改',
-    statusTitle: '运行时状态',
-    statusMissing: '未找到 yeelight-home 运行时。',
-    statusHint: '请从 Yeelight/yeelight-home Releases 安装，或在下方配置 binPath / 环境变量 YEELIGHT_HOME_BIN。',
-    installTitle: '安装 yeelight-home',
-    installSubtitle: '插件依赖本地 yeelight-home CLI，请选择安装渠道：',
-    installChecking: '正在检测安装渠道…',
-    installChoose: '通过以下方式安装',
-    installRun: '安装',
-    installing: '安装中…',
-    installOk: '安装成功',
-    installFail: '安装失败',
-    installRefresh: '刷新状态',
-    installNoChannel: '没有可用的安装渠道。请先安装 npm 或 Homebrew，或在下方配置 binPath / YEELIGHT_HOME_BIN。',
-    authLabel: '登录',
-    authLoggedIn: '已登录',
-    authOut: '未登录',
-    authHint: '请在本机运行 `yeelight-home auth login --qr` 完成登录。',
-    authCopyCmd: '复制登录命令',
-    authCopied: '已复制！',
-    authOpenTerminal: '打开终端并运行',
-    authGuideTitle: '登录 Yeelight 账号',
-    authGuideDesc: '安装完成。现在登录您的 Yeelight 账号：',
-    authGuideStep1: '1. 打开终端（Terminal）',
-    authGuideStep2: '2. 运行：yeelight-home auth login --qr',
-    authGuideStep3: '3. 用手机扫描二维码',
-    authGuideDone: '登录后点击「刷新」验证状态。',
-    doctorLabel: '诊断',
+    close: '收起',
+    open: '展开',
+    connected: '已连接',
+    disconnected: '未连接',
+    notInstalled: '未安装',
     versionLabel: '版本',
     binLabel: '可执行文件',
-    regionLabel: '区域',
-    houseLabel: '家庭',
-    configTitle: '配置',
-    binPath: '运行时路径（binPath）',
-    binPathHint: 'yeelight-home 可执行文件绝对路径；留空自动探测（PATH、YEELIGHT_HOME_BIN）。',
-    region: '区域（--region）',
-    regionHint: '留空使用 Runtime 默认区域。',
-    houseId: '默认家庭（--house-id）',
-    houseIdHint: '留空使用 Runtime 当前选中家庭。',
-    profile: 'Runtime 配置档（--profile）',
-    profileHint: '留空使用当前激活配置档。',
-    locale: '请求语言（locale）',
-    dryRunDefault: '默认先干跑（dry-run）',
-    dryRunDefaultHint: '每次调用都先做无写入预览，确认后再以非 dry-run 重发。',
-    requestTimeoutMs: '调用超时（毫秒）',
-    logRetention: '日志保留条数',
-    logEnabled: '启用调用日志',
-    uiStatusEnabled: '显示状态区块',
-    uiLogsEnabled: '显示日志区块',
-    uiQuickInvokeEnabled: '显示快速调用区块',
-    quickTitle: '快速调用',
-    intent: '意图（intent）',
-    intentCustom: '自定义…',
-    utterance: '请求描述（utterance）',
-    parameters: '参数（JSON，可选）',
-    dryRun: '干跑（不写入）',
-    confirm: '我确认执行该实时请求',
-    run: '执行',
-    running: '执行中…',
-    result: '结果',
-    resultEmpty: '暂无结果',
-    logsTitle: '调用日志',
-    logsEmpty: '暂无记录',
-    clearLogs: '清空日志',
-    detailTitle: '详情',
+    regionLabel: '地区',
+    houseLabel: '住宅 ID',
+    profileLabel: '配置档',
+    authLabel: '认证',
+    authLoggedIn: '已登录',
+    authOut: '未登录',
+    authGuideTitle: '扫码登录',
+    authGuideDesc: '使用 Yeelight 账号认证：',
+    authGuideStep1: '1. 在终端中运行以下命令：',
+    authGuideStep2: '2. 扫描终端中显示的二维码',
+    authGuideStep3: '3. 登录成功后点击下方"刷新"',
+    authGuideDone: '现在可以正常使用 Yeelight 工具了。',
+    authCopied: '已复制！',
+    authCopyCmd: '复制',
+    authReAuth: '重新认证',
+    authTokenSource: '通过 {source}',
+    configTitle: '设置',
+    configBinPath: '运行时路径',
+    configBinHint: '留空自动检测',
+    configRegion: '地区',
+    configRegionHint: 'Yeelight 服务区域',
+    configHouseId: '住宅 ID',
+    configHouseHint: '留空使用默认住宅',
+    configProfile: '配置档',
+    configProfileHint: '留空使用活跃配置',
+    configLocale: '语言',
+    configDryRun: '默认 Dry Run',
+    configDryRunHint: '预览效果不实际执行',
+    configTimeout: '请求超时 (毫秒)',
+    configLogRetention: '日志保留',
+    configLogRetentionHint: '最多保留的日志条数',
+    configLogEnabled: '启用调用日志',
+    configUiStatus: '显示运行状态',
+    configUiLogs: '显示日志区域',
+    configUiQuickInvoke: '显示快速调用面板',
+    statusMissing: '未找到运行时',
+    statusHint: '安装 yeelight-home 以使用 Yeelight 智能家居工具。',
+    installTitle: '安装 yeelight-home',
+    installSubtitle: '选择安装方式：',
+    installChecking: '正在检查可用安装方式…',
+    installNoChannel: '无可用安装方式',
+    installChoose: '通过以下方式安装',
+    installing: '安装中…',
+    installOk: '安装完成',
+    installFail: '安装失败',
+    installRefresh: '刷新状态',
+    installError: '安装失败',
+    installErrorHint: '查看下方输出了解详情：',
+    logTitle: '调用日志',
+    logEmpty: '暂无日志。',
+    logDetail: '查看详情',
     closeDetail: '关闭',
+    detailTitle: '日志详情',
+    doctorLabel: '诊断信息',
+    doctorFallback: '暂无诊断信息。',
+    optionLabel: '选项',
+    retry: '重试',
+    notApplicable: '—',
+    homeUnknown: '—',
+    unknown: '未知',
     errorLoad: '加载失败',
     errorSave: '保存失败',
     errorRun: '执行失败',
-    errorClear: '清空失败',
-    versionUnknown: '未知',
-    doctorFallback: '诊断信息不可用',
-    homeUnknown: '—',
   },
 }
 
@@ -205,765 +194,650 @@ function labels(active) {
   return raw.toLowerCase().indexOf('zh') === 0 ? TEXT.zh : TEXT.en
 }
 
-const QUICK_INTENTS = [
-  'home.summary',
-  'home.list',
-  'entity.list',
-  'state.query',
-  'light.power.set',
-  'light.brightness.set',
-  'light.color_temperature.set',
-  'light.color.set',
-  'scene.list',
-  'scene.execute',
-  'automation.list',
-  'automation.enable',
-  'automation.disable',
-  'diagnose.device',
-  'group.list',
-  'lighting.design.plan',
-  'memory.remember',
-  'memory.list',
-  'recommendation.list',
-  'operation.lesson.list',
-  'intent.explain',
-]
-
-const INPUT_STYLE = {
+/* ── style constants ─────────────────────────────────────────────────── */
+var CARD = {
+  border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))',
+  bg: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.04))',
+  radius: '12px',
+  padding: '16px',
+}
+var INPUT = {
   border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))',
   background: 'var(--dsw-alias-bg-layer-3, rgba(127,127,127,0.06))',
   color: 'var(--dsw-alias-label-primary, #e6e6e6)',
-  borderRadius: 8,
+  borderRadius: '8px',
   padding: '0 10px',
   fontSize: 13,
-  lineHeight: '20px',
+  lineHeight: '32px',
   height: 34,
   width: '100%',
   boxSizing: 'border-box',
+  font: 'inherit',
+}
+var SELECT = Object.assign({}, INPUT, {
+  cursor: 'pointer',
+  appearance: 'auto' // let the browser render the native dropdown arrow
+})
+var LABEL = {
+  color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))',
+  fontSize: 12,
+  lineHeight: '18px',
+  marginBottom: 4,
+}
+var HINT = {
+  color: 'var(--dsw-alias-label-tertiary, rgba(230,230,230,0.45))',
+  fontSize: 11,
+  lineHeight: '16px',
+  marginTop: 2,
+}
+var ERROR = {
+  color: 'var(--dsw-alias-state-error-primary, #e5484d)',
+  fontSize: 12,
+  lineHeight: '18px',
+}
+var SUCCESS = {
+  color: 'var(--dsw-alias-state-success-primary, #30a46c)',
+  fontSize: 12,
+  lineHeight: '18px',
 }
 
-const TEXTAREA_STYLE = { ...INPUT_STYLE, height: 72, paddingTop: 7, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }
+function btnStyle(primary) {
+  return {
+    border: '1px solid ' + (primary ? 'var(--dsw-alias-brand-primary, #5e6ad2)' : 'var(--dsw-alias-border-l2, rgba(127,127,127,0.3))'),
+    background: primary ? 'var(--dsw-alias-brand-primary, #5e6ad2)' : 'transparent',
+    color: primary ? '#fff' : 'var(--dsw-alias-label-primary, #e6e6e6)',
+    borderRadius: 8,
+    padding: '5px 14px',
+    fontSize: 13,
+    cursor: 'pointer',
+    font: 'inherit',
+    lineHeight: '22px',
+    whiteSpace: 'nowrap',
+  }
+}
 
-const LABEL_STYLE = { color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))', fontSize: 12, lineHeight: '18px', margin: '6px 0 3px' }
+function disabledStyle(disabled) {
+  return disabled ? { opacity: 0.5, cursor: 'default' } : {}
+}
 
-const HINT_STYLE = { color: 'var(--dsw-alias-label-tertiary, rgba(230,230,230,0.45))', fontSize: 11, lineHeight: '16px', margin: '2px 0 0' }
+/* ── YeelightPage factory ────────────────────────────────────────────── */
+function YeelightPage(react, localeRef) {
+  var useState = react.useState
+  var useCallback = react.useCallback
+  var useEffect = react.useEffect
 
-const SECTION_STYLE = { flexDirection: 'column', gap: 10, marginTop: 14 }
+  return function Page() {
+    var t = labels(localeRef && localeRef.current ? localeRef.current : undefined)
+    var _s = useState(null)
+    var config = _s[0]
+    var setConfig = _s[1]
+    var _s2 = useState(null)
+    var defaults = _s2[0]
+    var setDefaults = _s2[1]
+    var _s3 = useState(null)
+    var status = _s3[0]
+    var setStatus = _s3[1]
+    var _s4 = useState([])
+    var logs = _s4[0]
+    var setLogs = _s4[1]
+    var _s5 = useState(null)
+    var detail = _s5[0]
+    var setDetail = _s5[1]
+    var _s6 = useState(false)
+    var busy = _s6[0]
+    var setBusy = _s6[1]
+    var _s7 = useState(null)
+    var notice = _s7[0]
+    var setNotice = _s7[1]
+    var _s8 = useState(null)
+    var installOpts = _s8[0]
+    var setInstallOpts = _s8[1]
+    var _s9 = useState(null)
+    var installProgress = _s9[0]
+    var setInstallProgress = _s9[1]
+    var _s10 = useState(false)
+    var installing = _s10[0]
+    var setInstalling = _s10[1]
+    // Options for select fields
+    var _s11 = useState(null)
+    var options = _s11[0]
+    var setOptions = _s11[1]
+    // Edit draft
+    var _s12 = useState(null)
+    var draft = _s12[0]
+    var setDraft = _s12[1]
 
-function ConfigCard(react, localeRef) {
-  const { useState, useEffect, useMemo, useCallback } = react
-
-  return function Card() {
-    const t = labels(localeRef && localeRef.current ? localeRef.current : undefined)
-    const [open, setOpen] = useState(false)
-    const [config, setConfig] = useState(null)
-    const [defaults, setDefaults] = useState(null)
-    const [draft, setDraft] = useState(null)
-    const [status, setStatus] = useState(null)
-    const [logs, setLogs] = useState([])
-    const [detail, setDetail] = useState(null)
-    const [busy, setBusy] = useState(false)
-    const [notice, setNotice] = useState(null)
-    const [installOpts, setInstallOpts] = useState(null)
-    const [installProgress, setInstallProgress] = useState(null)
-    const [installing, setInstalling] = useState(false)
-
-    const reloadConfig = useCallback(async () => {
-      const res = await fetch('/yeelight/config')
-      if (!res.ok) throw new Error(`${t.errorLoad}: HTTP ${res.status}`)
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorLoad)
-      setConfig(body.value.config)
-      setDefaults(body.value.defaults)
-      setDraft(JSON.parse(JSON.stringify(body.value.config)))
-      setNotice(null)
-    }, [t.errorLoad])
-
-    const reloadStatus = useCallback(async () => {
-      const res = await fetch('/yeelight/status')
-      if (!res.ok) throw new Error(`${t.errorLoad}: HTTP ${res.status}`)
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorLoad)
-      setStatus(body.value.status)
-    }, [t.errorLoad])
-
-    const reloadLogs = useCallback(async () => {
-      const res = await fetch('/yeelight/logs?limit=80')
-      if (!res.ok) throw new Error(`${t.errorLoad}: HTTP ${res.status}`)
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorLoad)
-      setLogs(body.value.entries || [])
-    }, [t.errorLoad])
-
-    const loadInstallOptions = useCallback(async () => {
+    // ── data fetchers ─────────────────────────────────────────────────
+    var loadConfig = useCallback(async function() {
       try {
-        const res = await fetch('/yeelight/install-options')
+        var res = await fetch('/yeelight/config')
         if (!res.ok) return
-        const body = await res.json()
-        if (body.ok && Array.isArray(body.value.options)) setInstallOpts(body.value.options)
-      } catch {}
+        var body = await res.json()
+        if (body.ok) {
+          setConfig(body.value.config)
+          setDefaults(body.value.defaults)
+          setDraft(body.value.config ? JSON.parse(JSON.stringify(body.value.config)) : null)
+        }
+      } catch (e) {}
     }, [])
 
-    const runInstall = useCallback(async (channel) => {
-      setInstalling(true)
-      setInstallProgress({ phase: 'installing', message: t.installing, channel })
+    var loadStatus = useCallback(async function() {
       try {
-        const res = await fetch('/yeelight/install', {
+        var res = await fetch('/yeelight/status')
+        if (!res.ok) return
+        var body = await res.json()
+        if (body.ok && body.value) setStatus(body.value.status)
+      } catch (e) {}
+    }, [])
+
+    var loadLogs = useCallback(async function() {
+      try {
+        var res = await fetch('/yeelight/logs?limit=80')
+        if (!res.ok) return
+        var body = await res.json()
+        if (body.ok && body.value) setLogs(body.value.entries || [])
+      } catch (e) {}
+    }, [])
+
+    var loadOptions = useCallback(async function() {
+      try {
+        var res = await fetch('/yeelight/options')
+        if (!res.ok) return
+        var body = await res.json()
+        if (body.ok) setOptions(body.value)
+      } catch (e) {}
+    }, [])
+
+    var loadInstallOptions = useCallback(async function() {
+      try {
+        var res = await fetch('/yeelight/install-options')
+        if (!res.ok) return
+        var body = await res.json()
+        if (body.ok && Array.isArray(body.value.options)) setInstallOpts(body.value.options)
+      } catch (e) {}
+    }, [])
+
+    useEffect(function() {
+      Promise.all([
+        loadConfig(),
+        loadStatus(),
+        loadLogs(),
+        loadOptions(),
+        loadInstallOptions(),
+      ]).catch(function() {})
+    }, [loadConfig, loadStatus, loadLogs, loadOptions, loadInstallOptions])
+
+    // ── save ──────────────────────────────────────────────────────────
+    var saveDraft = useCallback(async function() {
+      setBusy(true)
+      setNotice(null)
+      try {
+        var res = await fetch('/yeelight/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: draft }),
+        })
+        var body = await res.json()
+        if (!body.ok) throw new Error(body.error && body.error.message || t.errorSave)
+        setConfig(JSON.parse(JSON.stringify(draft)))
+        setDefaults(JSON.parse(JSON.stringify(draft)))
+        setNotice(t.saved)
+      } catch (err) {
+        setNotice(err instanceof Error ? err.message : String(err))
+      }
+      setBusy(false)
+    }, [draft, t.errorSave, t.saved])
+
+    // ── install ───────────────────────────────────────────────────────
+    var runInstall = useCallback(async function(channel) {
+      setInstalling(true)
+      setInstallProgress({ phase: 'installing', message: t.installing, channel: channel })
+      try {
+        var res = await fetch('/yeelight/install', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ channel }),
+          body: JSON.stringify({ channel: channel }),
         })
-        const body = await res.json()
-        if (!body.ok) throw new Error(body.error?.message ?? t.errorRun)
-        const result = body.value.result
-        const progress = body.value.progress
-        const last = progress && progress.length > 0 ? progress[progress.length - 1] : null
+        var body = await res.json()
+        if (!body.ok) throw new Error((body.error && body.error.message) || t.installFail)
+        var result = body.value.result
+        var progress = body.value.progress
+        var last = progress && progress.length > 0 ? progress[progress.length - 1] : null
         setInstallProgress({
           phase: result.ok ? 'done' : 'error',
-          message: result.ok ? (result.version ? `${t.installOk}: yeelight-home ${result.version} @ ${result.bin}` : t.installOk) : (result.error ?? t.installFail),
+          message: result.ok ? (result.version ? t.installOk + ': yeelight-home ' + result.version : t.installOk) : (result.error || t.installFail),
           channel: result.channel,
-          output: result.output?.slice(0, 2000) ?? '',
+          output: result.output ? result.output.slice(0, 2000) : '',
         })
-        if (result.ok) await reloadStatus()
-      } catch (error) {
-        setInstallProgress({ phase: 'error', message: `${t.installFail}: ${error.message || error}`, output: '' })
-      } finally {
-        setInstalling(false)
-      }
-    }, [t.installing, t.errorRun, t.installOk, t.installFail, reloadStatus])
-
-    useEffect(() => {
-      // Any response at all proves the host half exists. 404/network failure
-      // means no web profile: keep the card silent rather than erroring.
-      fetch('/yeelight/config')
-        .then((res) => {
-          if (res.status === 404) return
-          return Promise.all([reloadConfig(), reloadStatus(), reloadLogs()])
-        })
-        .catch(() => {})
-    }, [reloadConfig, reloadStatus, reloadLogs])
-
-    const patch = useCallback(
-      async (next) => {
-        setBusy(true)
-        try {
-          const res = await fetch('/yeelight/config', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ patch: next }),
-          })
-          const body = await res.json()
-          if (!body.ok) throw new Error(body.error?.message ?? t.errorSave)
-          setConfig(body.value.config)
-          setDraft(JSON.parse(JSON.stringify(body.value.config)))
-          await reloadStatus()
-          setNotice(t.saved)
-        } catch (error) {
-          setNotice(`${t.errorSave}: ${error && error.message ? error.message : error}`)
-        } finally {
-          setBusy(false)
+        if (result.ok) {
+          loadStatus()
+          loadConfig()
         }
-      },
-      [t.errorSave, t.saved, reloadStatus],
-    )
-
-    const resetAll = useCallback(async () => {
-      setBusy(true)
-      try {
-        const res = await fetch('/yeelight/config', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ reset: true }),
-        })
-        const body = await res.json()
-        if (!body.ok) throw new Error(body.error?.message ?? t.errorSave)
-        setConfig(body.value.config)
-        setDraft(JSON.parse(JSON.stringify(body.value.config)))
-        setNotice(t.saved)
       } catch (error) {
-        setNotice(`${t.errorSave}: ${error && error.message ? error.message : error}`)
-      } finally {
-        setBusy(false)
+        setInstallProgress({ phase: 'error', message: t.installFail + ': ' + (error.message || error), output: '' })
       }
-    }, [t.errorSave, t.saved])
+      setInstalling(false)
+    }, [t.installing, t.installFail, t.installOk, loadStatus, loadConfig])
 
-    const field = useCallback(
-      (key) => ({
-        get: () => (draft ? String(draft[key] ?? '') : ''),
-        set: (value) => setDraft((old) => ({ ...old, [key]: value })),
-      }),
-      [draft],
-    )
-    const numberField = useCallback(
-      (key) => ({
-        get: () => (draft ? Number(draft[key] ?? 0) : 0),
-        set: (value) => setDraft((old) => ({ ...old, [key]: typeof value === 'number' ? value : Number(value || 0) })),
-      }),
-      [draft],
-    )
-    const boolField = useCallback(
-      (key) => ({
-        get: () => (draft ? draft[key] === true : false),
-        set: (value) => setDraft((old) => ({ ...old, [key]: value === true })),
-      }),
-      [draft],
-    )
+    // ── field helpers ─────────────────────────────────────────────────
+    var changed = useCallback(function(key) {
+      return function(value) {
+        if (!draft) return
+        setDraft(Object.assign({}, draft, (function() { var o = {}; o[key] = value; return o })()))
+      }
+    }, [draft])
 
-    const saveDraft = useCallback(() => {
-      if (draft === null) return
-      void patch(JSON.parse(JSON.stringify(draft)))
-    }, [draft, patch])
+    var field = useCallback(function(key) {
+      return draft && draft[key] !== undefined ? draft[key] : defaults && defaults[key] !== undefined ? defaults[key] : ''
+    }, [draft, defaults])
 
-    const draftDiffers = useMemo(() => {
-      if (draft === null || config === null) return false
-      return JSON.stringify(draft) !== JSON.stringify(config)
-    }, [draft, config])
+    var boolField = useCallback(function(key) {
+      return draft && draft[key] !== undefined ? draft[key] : defaults && defaults[key] !== undefined ? defaults[key] : false
+    }, [draft, defaults])
 
-    const changed = useCallback((key) => draft !== null && config !== null && JSON.stringify(draft[key]) !== JSON.stringify(config[key]), [draft, config])
+    var numField = useCallback(function(key) {
+      return draft && draft[key] !== undefined ? draft[key] : defaults && defaults[key] !== undefined ? defaults[key] : 0
+    }, [draft, defaults])
 
-    const header = react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', cursor: 'pointer' } },
-      react.createElement('div', { style: { flex: 1, minWidth: 0 } },
-        react.createElement('div', { style: { fontSize: 14, fontWeight: 600 } }, t.title),
-        react.createElement('div', { style: { color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', fontSize: 13, lineHeight: 1.5 } }, t.subtitle),
-      ),
-      react.createElement('span', { style: { color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', fontSize: 12 } }, open ? t.close : t.open),
-    )
+    var draftDiffers = config && draft ? JSON.stringify(config) !== JSON.stringify(draft) : false
 
-    // ── status section ───────────────────────────────────────────────────
-    const statusBody = react.createElement('div', { style: SECTION_STYLE },
-      react.createElement('div', { style: { fontSize: 13, fontWeight: 600 } }, t.statusTitle),
-      !status && !busy ? react.createElement('div', { style: HINT_STYLE }, t.loading) : null,
-      status &&
-        (status.bin
-          ? react.createElement(
-              'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-              keyValueRow(react, t, t.versionLabel, status.version ? `${status.version.version}${status.version.commit ? ` (${String(status.version.commit).slice(0, 7)})` : ''}` : t.versionUnknown),
-              keyValueRow(react, t, t.binLabel, status.bin),
-              keyValueRow(react, t, t.regionLabel, status.auth && status.auth.region ? status.auth.region : '—'),
-              keyValueRow(react, t, t.houseLabel, status.auth && status.auth.houseId ? status.auth.houseId : '—'),
-              keyValueRow(
-                react,
-                t,
-                t.authLabel,
-                status.auth
-                  ? `${status.auth.authenticated ? t.authLoggedIn : t.authOut}${status.auth.authenticated && status.auth.tokenSource ? ` (${status.auth.tokenSource})` : ''}`
-                  : `${t.authOut}${status.authError ? ` · ${status.authError}` : ''}`,
-              ),
-              !status.auth || !status.auth.authenticated ? react.createElement(AuthGuide, { react, t }) : null,
-              react.createElement(
-                'details',
-                { style: { marginTop: 4 } },
-                react.createElement('summary', { style: LABEL_STYLE }, t.doctorLabel),
-                react.createElement(
-                  'pre',
-                  { style: { ...TEXTAREA_STYLE, height: 160, whiteSpace: 'pre-wrap', margin: 0 } },
-                  status.doctor && status.doctor.text ? status.doctor.text.slice(0, 6000) : t.doctorFallback,
-                ),
-              ),
-            )
-          : react.createElement(
-              'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-              react.createElement('div', { style: { color: 'var(--dsw-alias-state-error-primary, #e5484d)', fontSize: 13 } }, t.statusMissing),
-              react.createElement('div', { style: HINT_STYLE }, t.statusHint),
-              react.createElement(InstallGuide, { react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy }),
-              react.createElement('div', { style: { marginTop: 4 } },
-                react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.refresh),
-              ),
-            )
-      ),
-      status && status.bin
-        ? react.createElement('div', { style: { marginTop: 4 } },
-            react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.refresh),
-          )
-        : null,
-    )
-
-    // ── config section ───────────────────────────────────────────────────
-    const configFields = draft
-      ? [
-          fieldRow(react, t, 'binPath', t.binPath, field('binPath'), INPUT_STYLE, changed, t.binPathHint),
-          fieldRow(react, t, 'region', t.region, field('region'), INPUT_STYLE, changed, t.regionHint),
-          fieldRow(react, t, 'houseId', t.houseId, field('houseId'), INPUT_STYLE, changed, t.houseIdHint),
-          fieldRow(react, t, 'profile', t.profile, field('profile'), INPUT_STYLE, changed, t.profileHint),
-          selectRow(react, t, 'locale', t.locale, field('locale'), ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'], changed),
-          checkboxRow(react, t, 'dryRunDefault', t.dryRunDefault, boolField('dryRunDefault'), changed, t.dryRunDefaultHint),
-          numberRow(react, t, 'requestTimeoutMs', t.requestTimeoutMs, numberField('requestTimeoutMs'), changed, 5000, 600000, 1000),
-          numberRow(react, t, 'logRetention', t.logRetention, numberField('logRetention'), changed, 20, 5000, 10),
-          checkboxRow(react, t, 'logEnabled', t.logEnabled, boolField('logEnabled'), changed, null),
-          checkboxRow(react, t, 'uiStatusEnabled', t.uiStatusEnabled, boolField('uiStatusEnabled'), changed, null),
-          checkboxRow(react, t, 'uiLogsEnabled', t.uiLogsEnabled, boolField('uiLogsEnabled'), changed, null),
-          checkboxRow(react, t, 'uiQuickInvokeEnabled', t.uiQuickInvokeEnabled, boolField('uiQuickInvokeEnabled'), changed, null),
-        ]
-      : []
-
-    const configBody = react.createElement('div', { style: SECTION_STYLE },
-      react.createElement('div', { style: { fontSize: 13, fontWeight: 600 } }, t.configTitle),
-      !draft ? react.createElement('div', { style: HINT_STYLE }, t.loading) : configFields,
-      draft
-        ? react.createElement(
-            'div',
-            { style: { display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 } },
-            react.createElement(
-              'button',
-              { onClick: saveDraft, disabled: busy || !draftDiffers, style: primaryButtonStyle(busy || !draftDiffers) },
-              busy ? t.saving : t.save,
-            ),
-            react.createElement(
-              'button',
-              {
-                onClick: () => {
-                  setDraft(JSON.parse(JSON.stringify(config)))
-                  setNotice(null)
-                },
-                disabled: !draftDiffers,
-                style: buttonStyle(),
-              },
-              t.discard,
-            ),
-            react.createElement(
-              'button',
-              { onClick: () => void resetAll(), disabled: busy, style: buttonStyle() },
-              busy ? t.resetting : t.reset,
-            ),
-            notice ? react.createElement('span', { style: { fontSize: 12, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))' } }, notice) : null,
-          )
-        : null,
-    )
-
-    // ── quick invoke section ─────────────────────────────────────────────
-    const quickBody = react.createElement(QuickInvoke, { react, t, busy, setBusy, onNotice: setNotice })
-
-    // ── log section ───────────────────────────────────────────────────────
-    const logBody = react.createElement(LogSection, { react, t, logs, setLogs, setDetail, reloadLogs, busy, setBusy })
-
-    const body = react.createElement(
-      'div',
-      { style: { margin: '0 16px', paddingBottom: 10, display: 'flex', flexDirection: 'column', gap: 4 } },
-      statusBody,
-      configBody,
-      draft && draft.uiQuickInvokeEnabled !== false ? quickBody : null,
-      draft && draft.uiLogsEnabled !== false ? logBody : null,
-      detail ? react.createElement(DetailView, { react, t, detail, setDetail }) : null,
-    )
-
-    return react.createElement(
-      'div',
-      { style: { width: '100%', boxSizing: 'border-box' } },
-      react.createElement('div', { onClick: () => setOpen((v) => !v) }, header),
-      open ? body : null,
-    )
-  }
-}
-
-function buttonStyle() {
-  return {
-    border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))',
-    color: 'var(--dsw-alias-label-primary, #e6e6e6)',
-    font: 'inherit',
-    cursor: 'pointer',
-    background: 'transparent',
-    borderRadius: 6,
-    padding: '5px 12px',
-    fontSize: 12,
-  }
-}
-
-
-function AuthGuide({ react, t }) {
-  const { useState, useCallback } = react
-  const [copied, setCopied] = useState(false)
-  const copy = useCallback(() => {
-    try {
-      // Use the Clipboard API via the textarea trick for cross-browser safety
-      const ta = document.createElement('textarea')
-      ta.value = 'yeelight-home auth login --qr'
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {}
-  }, [])
-  return react.createElement('div', { style: { marginTop: 8, padding: 10, border: '1px solid var(--dsw-alias-state-warning-border, rgba(245,166,35,0.3))', borderRadius: 8, background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.04))' } },
-    react.createElement('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, t.authGuideTitle),
-    react.createElement('div', { style: { fontSize: 12, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } },
-      react.createElement('div', null, t.authGuideDesc),
-      react.createElement('div', { style: { marginTop: 4 } }, t.authGuideStep1),
-      react.createElement('div', { style: { margin: '4px 0', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 4, fontFamily: 'monospace', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 } },
-        react.createElement('span', { style: { flex: 1, wordBreak: 'break-all' } }, 'yeelight-home auth login --qr'),
-        react.createElement('button', {
-          onClick: () => void copy(),
-          style: { border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', background: 'transparent', color: 'var(--dsw-alias-label-primary, #e6e6e6)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11 },
-        }, copied ? t.authCopied : t.authCopyCmd),
-      ),
-      react.createElement('div', null, t.authGuideStep3),
-      react.createElement('div', { style: { marginTop: 6 } }, t.authGuideDone),
-    ),
-  )
-}
-
-
-function InstallGuide({ react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy }) {
-  const { useState, useEffect } = react
-  const [loaded, setLoaded] = useState(false)
-  useEffect(() => {
-    if (!loaded) { setLoaded(true); loadInstallOptions() }
-  }, [loaded, loadInstallOptions])
-  if (installProgress) {
-    return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
-      react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
-      react.createElement('div', { style: { fontSize: 12, color: installProgress.phase === 'error' ? 'var(--dsw-alias-state-error-primary, #e5484d)' : 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, installProgress.message),
-      installProgress.output ? react.createElement('pre', { style: { fontSize: 11, maxHeight: 120, overflow: 'auto', background: 'rgba(0,0,0,0.2)', padding: 6, borderRadius: 4, margin: 0, whiteSpace: 'pre-wrap' } }, installProgress.output) : null,
-      installProgress.phase === 'done' ? react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.installRefresh) : null,
-    )
-  }
-  if (installing) {
-    return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
-      react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
-      react.createElement('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, t.installing),
-    )
-  }
-  if (!installOpts) {
-    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installChecking)
-  }
-  if (installOpts.length === 0) {
-    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installNoChannel)
-  }
-  const available = installOpts.filter((o) => o.available)
-  if (available.length === 0) {
-    return react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginTop: 4 } }, t.installNoChannel)
-  }
-  return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6, padding: 8, border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', borderRadius: 6 } },
-    react.createElement('div', { style: { fontSize: 12, fontWeight: 600 } }, t.installTitle),
-    react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))' } }, t.installSubtitle),
-    react.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
-      available.map((opt) =>
-        react.createElement('button', {
-          key: opt.channel,
-          onClick: () => void runInstall(opt.channel),
-          disabled: installing,
-          style: { ...primaryButtonStyle(installing), fontSize: 12, padding: '5px 10px' },
-        }, opt.label),
-      ),
-    ),
-    react.createElement('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', lineHeight: 1.5 } },
-      available.length > 0 ? `${t.installChoose} ${available.map((o) => o.label).join(' / ')}` : null,
-    ),
-  )
-}
-
-function primaryButtonStyle(disabled) {
-  return {
-    border: '1px solid transparent',
-    background: 'var(--dsw-alias-brand-primary, #4a8cf7)',
-    color: 'var(--dsw-alias-label-on-brand, #fff)',
-    font: 'inherit',
-    cursor: disabled ? 'default' : 'pointer',
-    opacity: disabled ? 0.55 : 1,
-    borderRadius: 6,
-    padding: '5px 12px',
-    fontSize: 12,
-  }
-}
-
-function keyValueRow(react, t, label, value) {
-  return react.createElement(
-    'div',
-    { style: { display: 'flex', gap: 8, fontSize: 13, lineHeight: '20px' } },
-    react.createElement('span', { style: { color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))', minWidth: 64 } }, label),
-    react.createElement('span', { style: { wordBreak: 'break-all' } }, value),
-  )
-}
-
-function fieldRow(react, t, key, label, field, style, changed, hint) {
-  return react.createElement(
-    'div',
-    { key, style: { flexDirection: 'column', gap: 2, display: 'flex' } },
-    react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-      react.createElement('label', { style: { ...LABEL_STYLE, margin: 0, flex: 1 } }, label),
-      changed(key) ? react.createElement('span', { style: { fontSize: 10, color: 'var(--dsw-alias-label-warning, #f5a623)' } }, '●') : null,
-    ),
-    react.createElement('input', {
-      value: field.get(),
-      placeholder: '',
-      onChange: (e) => field.set(e.target.value),
-      style: { ...style, height: 34 },
-    }),
-    hint ? react.createElement('div', { style: HINT_STYLE }, hint) : null,
-  )
-}
-
-function numberRow(react, t, key, label, field, changed, min, max, step) {
-  return react.createElement(
-    'div',
-    { key, style: { flexDirection: 'column', gap: 2, display: 'flex' } },
-    react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-      react.createElement('label', { style: { ...LABEL_STYLE, margin: 0, flex: 1 } }, label),
-      changed(key) ? react.createElement('span', { style: { fontSize: 10, color: 'var(--dsw-alias-label-warning, #f5a623)' } }, '●') : null,
-    ),
-    react.createElement('input', {
-      type: 'number',
-      value: field.get(),
-      min,
-      max,
-      step,
-      onChange: (e) => field.set(Number(e.target.value)),
-      style: { ...INPUT_STYLE, height: 34 },
-    }),
-  )
-}
-
-function selectRow(react, t, key, label, field, options, changed) {
-  return react.createElement(
-    'div',
-    { key, style: { flexDirection: 'column', gap: 2, display: 'flex' } },
-    react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-      react.createElement('label', { style: { ...LABEL_STYLE, margin: 0, flex: 1 } }, label),
-      changed(key) ? react.createElement('span', { style: { fontSize: 10, color: 'var(--dsw-alias-label-warning, #f5a623)' } }, '●') : null,
-    ),
-    react.createElement(
-      'select',
-      { value: field.get(), onChange: (e) => field.set(e.target.value), style: { ...INPUT_STYLE, height: 34, cursor: 'pointer' } },
-      options.map((option) => react.createElement('option', { key: option, value: option }, option)),
-    ),
-  )
-}
-
-function checkboxRow(react, t, key, label, field, changed, hint) {
-  return react.createElement(
-    'div',
-    { key, style: { flexDirection: 'column', gap: 2, display: 'flex' } },
-    react.createElement('label', { style: { ...LABEL_STYLE, margin: 0, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 } },
-      react.createElement('input', { type: 'checkbox', checked: field.get(), onChange: (e) => field.set(e.target.checked) }),
-      label,
-      changed(key) ? react.createElement('span', { style: { fontSize: 10, color: 'var(--dsw-alias-label-warning, #f5a623)' } }, '●') : null,
-    ),
-    hint ? react.createElement('div', { style: HINT_STYLE }, hint) : null,
-  )
-}
-
-function QuickInvoke({ react, t, busy, setBusy, onNotice }) {
-  const { useState, useCallback } = react
-  const [intent, setIntent] = useState('home.summary')
-  const [utterance, setUtterance] = useState('')
-  const [parameters, setParameters] = useState('')
-  const [dryRun, setDryRun] = useState(true)
-  const [confirm, setConfirm] = useState(false)
-  const [result, setResult] = useState(null)
-  const [running, setRunning] = useState(false)
-  const [error, setError] = useState(null)
-
-  const run = useCallback(async () => {
-    if (utterance.trim() === '') {
-      setError(`${t.errorRun}: ${t.utterance}`)
-      return
+    // ── render: FieldRow ──────────────────────────────────────────────
+    function FieldRow(label, hint, child) {
+      return react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 2 } },
+        react.createElement('label', { style: LABEL }, label),
+        child,
+        hint ? react.createElement('div', { style: HINT }, hint) : null,
+      )
     }
-    if (!dryRun && !confirm) {
-      setError(`${t.errorRun}: ${t.confirm}`)
-      return
-    }
-    setRunning(true)
-    setError(null)
-    setResult(null)
-    try {
-      const res = await fetch('/yeelight/invoke', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          utterance: utterance.trim(),
-          intent: intent === '__custom__' ? '' : intent,
-          parameters: parameters.trim() === '' ? undefined : JSON.parse(parameters),
-          dry_run: dryRun,
-          confirm,
-        }),
-      })
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorRun)
-      setResult(body.value.outcome)
-      onNotice(null)
-    } catch (e) {
-      setError(`${t.errorRun}: ${e && e.message ? e.message : e}`)
-    } finally {
-      setRunning(false)
-      setBusy(false)
-    }
-  }, [utterance, intent, parameters, dryRun, confirm, t.errorRun, t.utterance, t.confirm, onNotice, setBusy])
 
-  return react.createElement(
-    'div',
-    { style: SECTION_STYLE },
-    react.createElement('div', { style: { fontSize: 13, fontWeight: 600 } }, t.quickTitle),
-    react.createElement('label', { style: LABEL_STYLE }, t.intent),
-    react.createElement(
-      'select',
-      {
-        value: intent,
-        onChange: (e) => setIntent(e.target.value),
-        style: { ...INPUT_STYLE, height: 34, cursor: 'pointer' },
-      },
-      QUICK_INTENTS.map((option) => react.createElement('option', { key: option, value: option }, option)),
-      react.createElement('option', { value: '__custom__' }, t.intentCustom),
-    ),
-    react.createElement('label', { style: LABEL_STYLE }, t.utterance),
-    react.createElement('textarea', {
-      value: utterance,
-      placeholder: '',
-      onChange: (e) => setUtterance(e.target.value),
-      style: TEXTAREA_STYLE,
-    }),
-    react.createElement('label', { style: LABEL_STYLE }, t.parameters),
-    react.createElement('textarea', {
-      value: parameters,
-      placeholder: '{}',
-      spellCheck: false,
-      onChange: (e) => setParameters(e.target.value),
-      style: TEXTAREA_STYLE,
-    }),
-    react.createElement('div', { style: { display: 'flex', gap: 18, alignItems: 'center', marginTop: 6 } },
-      react.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' } },
-        react.createElement('input', { type: 'checkbox', checked: dryRun, onChange: (e) => setDryRun(e.target.checked) }),
-        t.dryRun,
-      ),
-      react.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: dryRun ? 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))' : undefined } },
-        react.createElement('input', { type: 'checkbox', checked: confirm, disabled: dryRun, onChange: (e) => setConfirm(e.target.checked) }),
-        t.confirm,
-      ),
-    ),
-    react.createElement('div', { style: { marginTop: 4, display: 'flex', alignItems: 'center', gap: 10 } },
-      react.createElement('button', { onClick: () => void run(), disabled: running || busy, style: primaryButtonStyle(running || busy) }, running ? t.running : t.run),
-      error ? react.createElement('span', { style: { fontSize: 12, color: 'var(--dsw-alias-state-error-primary, #e5484d)' } }, error) : null,
-    ),
-    result
-      ? react.createElement(
-          'div',
-          { style: { marginTop: 8 } },
-          react.createElement('div', { style: LABEL_STYLE }, t.result),
-          react.createElement(
-            'pre',
-            { style: { ...TEXTAREA_STYLE, height: 'auto', minHeight: 60, maxHeight: 300, overflow: 'auto', whiteSpace: 'pre-wrap', margin: 0 } },
-            JSON.stringify(result, null, 2),
-          ),
+    function SelectField(label, hint, key, options) {
+      var val = field(key) || ''
+      return FieldRow(label, hint,
+        react.createElement('select', {
+          value: val,
+          onChange: function(e) { changed(key)(e.target.value) },
+          disabled: !draft,
+          style: Object.assign({}, SELECT, disabledStyle(!draft)),
+        },
+          options.map(function(opt) {
+            return react.createElement('option', { key: opt.value, value: opt.value }, opt.label)
+          })
         )
-      : null,
-  )
-}
-
-function fmtTime(ts) {
-  const d = new Date(ts)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
-function LogSection({ react, t, logs, setLogs, setDetail, reloadLogs, busy, setBusy }) {
-  const { useCallback } = react
-  const loadDetail = useCallback(async (id) => {
-    try {
-      const res = await fetch(`/yeelight/logs/detail?id=${encodeURIComponent(id)}`)
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorLoad)
-      setDetail(body.value.entry)
-    } catch (e) {
-      setDetail({ error: e && e.message ? e.message : String(e) })
+      )
     }
-  }, [setDetail, t.errorLoad])
 
-  const clear = useCallback(async () => {
-    setBusy(true)
-    try {
-      const res = await fetch('/yeelight/logs/clear', { method: 'POST' })
-      const body = await res.json()
-      if (!body.ok) throw new Error(body.error?.message ?? t.errorClear)
-      setLogs([])
-      setDetail(null)
-    } catch (e) {
-      // surface inline
-    } finally {
-      setBusy(false)
+    function TextField(label, hint, key, placeholder) {
+      return FieldRow(label, hint,
+        react.createElement('input', {
+          type: 'text',
+          value: field(key),
+          placeholder: placeholder || '',
+          onChange: function(e) { changed(key)(e.target.value) },
+          disabled: !draft,
+          style: Object.assign({}, INPUT, disabledStyle(!draft)),
+        })
+      )
     }
-  }, [setLogs, setDetail, t.errorClear, setBusy])
 
-  return react.createElement(
-    'div',
-    { style: SECTION_STYLE },
-    react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
-      react.createElement('div', { style: { fontSize: 13, fontWeight: 600, flex: 1 } }, t.logsTitle),
-      react.createElement('button', { onClick: () => void reloadLogs(), disabled: busy, style: buttonStyle() }, t.refresh),
-      react.createElement('button', { onClick: () => void clear(), disabled: busy, style: buttonStyle() }, t.clearLogs),
-    ),
-    logs.length === 0
-      ? react.createElement('div', { style: HINT_STYLE }, t.logsEmpty)
-      : react.createElement(
-          'div',
-          { style: { display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 280, overflow: 'auto' } },
-          logs.map((entry) =>
-            react.createElement(
-              'div',
-              {
-                key: entry.id,
-                onClick: () => void loadDetail(entry.id),
-                style: {
-                  display: 'flex',
-                  gap: 10,
-                  alignItems: 'center',
-                  borderRadius: 6,
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.2))',
-                },
-              },
-              react.createElement('span', { style: { color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', fontVariantNumeric: 'tabular-nums' } }, fmtTime(entry.ts)),
-              react.createElement(
-                'span',
-                {
-                  style: {
-                    borderRadius: 999,
-                    padding: '1px 8px',
-                    fontSize: 11,
-                    color: entry.ok ? 'var(--dsw-alias-state-success-primary, #46a758)' : 'var(--dsw-alias-state-error-primary, #e5484d)',
-                    border: '1px solid currentColor',
-                  },
-                },
-                entry.status,
-              ),
-              react.createElement('span', { style: { flex: 1, color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-                `${entry.intent ?? ''}${entry.intent && entry.utterance ? ' · ' : ''}${entry.utterance ?? ''}`),
-              react.createElement('span', { style: { color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', fontVariantNumeric: 'tabular-nums' } }, `${entry.durationMs}ms`),
-              entry.dryRun ? react.createElement('span', { style: { color: 'var(--dsw-alias-label-warning, #f5a623)', fontSize: 11 } }, 'dry') : null,
-            ),
-          ),
+    function NumberField(label, hint, key, min, max, step) {
+      return FieldRow(label, hint,
+        react.createElement('input', {
+          type: 'number',
+          value: numField(key),
+          min: min,
+          max: max,
+          step: step || 1,
+          onChange: function(e) { changed(key)(Number(e.target.value)) },
+          disabled: !draft,
+          style: Object.assign({}, INPUT, disabledStyle(!draft)),
+        })
+      )
+    }
+
+    function CheckField(label, key, hint) {
+      var checked = boolField(key)
+      return react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' } },
+        react.createElement('input', {
+          type: 'checkbox',
+          checked: checked,
+          onChange: function(e) { changed(key)(e.target.checked) },
+          disabled: !draft,
+          style: { cursor: 'pointer', width: 16, height: 16 },
+        }),
+        react.createElement('label', { style: Object.assign({}, LABEL, { marginBottom: 0, cursor: 'pointer' }),
+          onClick: function() { if (draft) changed(key)(!checked) },
+        }, label),
+        hint ? react.createElement('span', { style: HINT }, hint) : null,
+      )
+    }
+
+    // ── render: Status Banner ─────────────────────────────────────────
+    function renderStatusBanner() {
+      if (!status) return react.createElement('div', { style: { padding: 12, textAlign: 'center', color: 'var(--dsw-alias-label-tertiary)' } }, t.loading)
+
+      var connected = status.bin && status.bin !== ''
+      var items = []
+
+      items.push(react.createElement('span', { key: 'dot', style: {
+        display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+        background: connected ? 'var(--dsw-alias-state-success-primary, #30a46c)' : 'var(--dsw-alias-state-error-primary, #e5484d)',
+        marginRight: 6,
+      }}))
+
+      items.push(react.createElement('span', { key: 'status', style: { fontSize: 13, fontWeight: 600, marginRight: 16 } },
+        connected ? t.connected : t.disconnected
+      ))
+
+      if (status.version) {
+        items.push(renderBadge('v' + (status.version.version || '') + (status.version.commit ? ' (' + status.version.commit.slice(0, 7) + ')' : '')))
+      }
+      if (status.bin) {
+        items.push(renderBadge(status.bin))
+      }
+      if (status.auth) {
+        items.push(renderBadge(status.auth.authenticated ? '✅ ' + t.authLoggedIn : '🔑 ' + t.authOut))
+      }
+      if (status.auth && status.auth.region) {
+        items.push(renderBadge(status.auth.region))
+      }
+
+      return react.createElement('div', { style: {
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8,
+        padding: CARD.padding, border: CARD.border, borderRadius: CARD.radius,
+        background: CARD.bg, marginBottom: 12,
+      }}, items)
+    }
+
+    function renderBadge(text) {
+      return react.createElement('span', { key: text, style: {
+        background: 'var(--dsw-alias-bg-module-platform, rgba(127,127,127,0.08))',
+        color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))',
+        borderRadius: 999, padding: '2px 8px', fontSize: 11, lineHeight: '18px',
+        whiteSpace: 'nowrap',
+      }}, text)
+    }
+
+    // ── render: Configuration Card ────────────────────────────────────
+    var regionOptions = (options && options.regions) || [
+      { value: '', label: t.notApplicable },
+      { value: 'cn', label: 'China (cn)' },
+      { value: 'us', label: 'United States (us)' },
+      { value: 'eu', label: 'Europe (eu)' },
+      { value: 'sg', label: 'Singapore (sg)' },
+      { value: 'in', label: 'India (in)' },
+      { value: 'ru', label: 'Russia (ru)' },
+    ]
+    var localeOptions = (options && options.locales) || [
+      { value: 'zh-CN', label: '中文 (zh-CN)' },
+      { value: 'en-US', label: 'English (en-US)' },
+      { value: 'zh-TW', label: '中文 (zh-TW)' },
+      { value: 'ja-JP', label: '日本語 (ja-JP)' },
+    ]
+
+    function renderConfig() {
+      var fields = []
+      fields.push(SelectField(t.configRegion, t.configRegionHint, 'region', regionOptions))
+      fields.push(TextField(t.configHouseId, t.configHouseHint, 'houseId', t.configHouseHint))
+      fields.push(TextField(t.configProfile, t.configProfileHint, 'profile', t.configProfileHint))
+      fields.push(SelectField(t.configLocale, '', 'locale', localeOptions))
+      fields.push(TextField(t.configBinPath, t.configBinHint, 'binPath', t.configBinHint))
+      fields.push(NumberField(t.configTimeout, '', 'requestTimeoutMs', 1000, 300000, 100))
+      fields.push(NumberField(t.configLogRetention, t.configLogRetentionHint, 'logRetention', 10, 5000, 10))
+      fields.push(CheckField(t.configDryRun, 'dryRunDefault', t.configDryRunHint))
+      fields.push(CheckField(t.configLogEnabled, 'logEnabled', ''))
+      fields.push(CheckField(t.configUiStatus, 'uiStatusEnabled', ''))
+      fields.push(CheckField(t.configUiLogs, 'uiLogsEnabled', ''))
+      fields.push(CheckField(t.configUiQuickInvoke, 'uiQuickInvokeEnabled', ''))
+
+      return react.createElement('div', { style: {
+        border: CARD.border, borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+      }},
+        react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 12 } }, t.configTitle),
+        react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, fields),
+        react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 } },
+          react.createElement('button', {
+            onClick: saveDraft,
+            disabled: busy || !draftDiffers,
+            style: Object.assign({}, btnStyle(true), disabledStyle(busy || !draftDiffers)),
+          }, busy ? t.saving : t.save),
+          react.createElement('button', {
+            onClick: function() { setDraft(config ? JSON.parse(JSON.stringify(config)) : null); setNotice(null) },
+            disabled: busy || !draftDiffers,
+            style: Object.assign({}, btnStyle(false), disabledStyle(busy || !draftDiffers)),
+          }, t.reset),
+          notice ? react.createElement('span', {
+            style: { fontSize: 12, color: 'var(--dsw-alias-label-tertiary, rgba(127,127,127,0.8))', marginLeft: 8 }
+          }, notice) : null,
         ),
-  )
+      )
+    }
+
+    // ── render: Auth Card ─────────────────────────────────────────────
+    function renderAuth() {
+      if (!status) return null
+      var isAuth = status.auth && status.auth.authenticated
+      var tokenSource = status.auth && status.auth.tokenSource ? status.auth.tokenSource : null
+
+      return react.createElement('div', { style: {
+        border: CARD.border, borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+      }},
+        react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 8 } }, t.auth),
+        isAuth
+          ? react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' } },
+              react.createElement('span', { style: SUCCESS }, '✅ ' + t.authLoggedIn),
+              tokenSource ? react.createElement('span', { style: { fontSize: 12, color: 'var(--dsw-alias-label-tertiary)' } },
+                t.authTokenSource.replace('{source}', tokenSource)
+              ) : null,
+              react.createElement('button', {
+                onClick: loadStatus,
+                style: btnStyle(false),
+              }, t.refresh),
+            )
+          : react.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+              react.createElement('span', { style: ERROR }, '🔑 ' + t.authOut),
+              react.createElement('div', { style: { fontSize: 12, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary)' } },
+                react.createElement('div', null, t.authGuideDesc),
+                react.createElement('div', { style: { marginTop: 4 } }, t.authGuideStep1),
+                react.createElement('div', { style: { margin: '4px 0', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 4, fontFamily: 'monospace', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 } },
+                  react.createElement('span', { style: { flex: 1, wordBreak: 'break-all' } }, 'yeelight-home auth login --qr'),
+                  react.createElement(ClipboardButton, { react: react, t: t }),
+                ),
+                react.createElement('div', { style: { marginTop: 4 } }, t.authGuideStep3),
+                react.createElement('div', { style: { marginTop: 6 } }, t.authGuideDone),
+              ),
+              react.createElement('div', { style: { marginTop: 4 } },
+                react.createElement('button', { onClick: loadStatus, style: btnStyle(false) }, t.refresh),
+              ),
+            ),
+      )
+    }
+
+    function ClipboardButton(props) {
+      var _r = props.react
+      var _t = props.t
+      var _s = _r.useState(false)
+      var copied = _s[0]
+      var setCopied = _s[1]
+      var copy = _r.useCallback(function() {
+        try {
+          var ta = document.createElement('textarea')
+          ta.value = 'yeelight-home auth login --qr'
+          document.body.appendChild(ta)
+          ta.select()
+          document.execCommand('copy')
+          document.body.removeChild(ta)
+          setCopied(true)
+          setTimeout(function() { setCopied(false) }, 2000)
+        } catch (e) {}
+      }, [])
+      return react.createElement('button', {
+        onClick: function() { copy() },
+        style: { border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', background: 'transparent', color: 'var(--dsw-alias-label-primary, #e6e6e6)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11 },
+      }, copied ? _t.authCopied : _t.authCopyCmd)
+    }
+
+    // ── render: Install Card ──────────────────────────────────────────
+    function renderInstall() {
+      if (!status) return null
+      if (status.bin && status.bin !== '') return null // already installed
+
+      if (installProgress && installProgress.phase === 'done') {
+        return react.createElement('div', { style: {
+          border: '1px solid var(--dsw-alias-state-success-border, rgba(48,164,108,0.3))', borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+        }},
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+          react.createElement('div', { style: SUCCESS }, installProgress.message),
+          react.createElement('button', { onClick: loadStatus, style: Object.assign({}, btnStyle(false), { marginTop: 6 }) }, t.installRefresh),
+        )
+      }
+
+      if (installProgress) {
+        return react.createElement('div', { style: {
+          border: '1px solid var(--dsw-alias-state-warning-border, rgba(245,166,35,0.3))', borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+        }},
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+          react.createElement('div', { style: { fontSize: 12, color: installProgress.phase === 'error' ? 'var(--dsw-alias-state-error-primary, #e5484d)' : 'var(--dsw-alias-label-secondary)' } }, installProgress.message),
+          installProgress.output ? react.createElement('pre', { style: { fontSize: 11, maxHeight: 120, overflow: 'auto', background: 'rgba(0,0,0,0.2)', padding: 6, borderRadius: 4, margin: 0, whiteSpace: 'pre-wrap', marginTop: 4 } }, installProgress.output) : null,
+        )
+      }
+
+      if (installing) {
+        return react.createElement('div', { style: {
+          border: '1px solid var(--dsw-alias-border-l2)', borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+        }},
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+          react.createElement('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)' } }, t.installing),
+        )
+      }
+
+      if (!installOpts) {
+        return react.createElement('div', { style: {
+          border: CARD.border, borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+        }},
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+          react.createElement('div', { style: HINT }, t.installChecking),
+        )
+      }
+
+      var available = installOpts.filter(function(o) { return o.available })
+      if (available.length === 0) {
+        return react.createElement('div', { style: {
+          border: '1px solid var(--dsw-alias-state-error-border, rgba(229,72,77,0.3))', borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+        }},
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+          react.createElement('div', { style: ERROR }, t.installNoChannel),
+        )
+      }
+
+      return react.createElement('div', { style: {
+        border: '1px solid var(--dsw-alias-state-warning-border, rgba(245,166,35,0.3))', borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+      }},
+        react.createElement('div', { style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, t.installTitle),
+        react.createElement('div', { style: HINT, marginBottom: 8 }, t.installSubtitle),
+        react.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
+          available.map(function(opt) {
+            return react.createElement('button', {
+              key: opt.channel,
+              onClick: function() { runInstall(opt.channel) },
+              disabled: installing,
+              style: Object.assign({}, btnStyle(true), { fontSize: 12, padding: '5px 10px' }, disabledStyle(installing)),
+            }, opt.label)
+          }),
+        ),
+        react.createElement('div', { style: Object.assign({}, HINT, { marginTop: 6 }) },
+          t.installChoose + ' ' + available.map(function(o) { return o.label }).join(' / '),
+        ),
+      )
+    }
+
+    // ── render: Logs Card ─────────────────────────────────────────────
+    function renderLogs() {
+      return react.createElement('div', { style: {
+        border: CARD.border, borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+      }},
+        react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 } },
+          react.createElement('div', { style: { fontSize: 14, fontWeight: 600, flex: 1 } }, t.logTitle),
+          react.createElement('button', { onClick: loadLogs, style: btnStyle(false) }, t.refresh),
+        ),
+        logs.length === 0
+          ? react.createElement('div', { style: HINT }, t.logEmpty)
+          : react.createElement('div', { style: { maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 } },
+              logs.slice(-100).reverse().map(function(line, i) {
+                var text = ''
+                if (typeof line === 'string') text = line
+                else if (line && typeof line === 'object') {
+                  var d = line.ts ? new Date(line.ts) : null
+                  var ts = d ? d.toLocaleString() : ''
+                  text = ts + ' [' + (line.status || '?') + '] ' + (line.intent || line.utterance || '') + (line.durationMs ? ' (' + line.durationMs + 'ms)' : '')
+                } else text = String(line)
+                return react.createElement('div', { key: i, style: { fontSize: 11, fontFamily: 'monospace', whiteSpace: 'pre-wrap', lineHeight: '18px', color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, text)
+              }),
+            ),
+      )
+    }
+
+    // ── render: Detail Panel ──────────────────────────────────────────
+    function renderDetail() {
+      if (!detail) return null
+      var text = ''
+      try { text = JSON.stringify(detail, null, 2) } catch (e) { text = String(detail) }
+      return react.createElement('div', { style: {
+        border: CARD.border, borderRadius: CARD.radius, background: CARD.bg, padding: CARD.padding, marginBottom: 12,
+      }},
+        react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 } },
+          react.createElement('div', { style: { fontSize: 13, fontWeight: 600, flex: 1 } }, t.detailTitle),
+          react.createElement('button', { onClick: function() { setDetail(null) }, style: btnStyle(false) }, t.closeDetail),
+        ),
+        react.createElement('pre', { style: {
+          fontSize: 11, maxHeight: 400, overflow: 'auto', whiteSpace: 'pre-wrap',
+          background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 4, margin: 0,
+        }}, text),
+      )
+    }
+
+    // ── render: Doctor ────────────────────────────────────────────────
+    function renderDoctor() {
+      if (!status || !status.doctor || !status.doctor.text) return null
+      return react.createElement('details', { style: { marginTop: 8 } },
+        react.createElement('summary', { style: { fontSize: 12, fontWeight: 500, cursor: 'pointer', color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } }, t.doctorLabel),
+        react.createElement('pre', { style: {
+          fontSize: 11, maxHeight: 160, overflow: 'auto', whiteSpace: 'pre-wrap',
+          background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 4, margin: 0, marginTop: 4,
+        }}, status.doctor.text.slice(0, 6000)),
+      )
+    }
+
+    // ── assemble page ─────────────────────────────────────────────────
+    return react.createElement('div', { style: { maxWidth: 600, margin: '0 auto', padding: '16px 0' } },
+      // Title
+      react.createElement('div', { style: { marginBottom: 16 } },
+        react.createElement('div', { style: { fontSize: 18, fontWeight: 700, marginBottom: 4 } }, t.title),
+        react.createElement('div', { style: { fontSize: 13, color: 'var(--dsw-alias-label-tertiary, rgba(230,230,230,0.45))' } }, t.subtitle),
+      ),
+      // Status banner
+      renderStatusBanner(),
+      // Auth
+      renderAuth(),
+      // Install
+      renderInstall(),
+      // Config
+      renderConfig(),
+      // Doctor
+      renderDoctor(),
+      // Logs
+      renderLogs(),
+      // Detail
+      renderDetail(),
+    )
+  }
 }
 
-function DetailView({ react, t, detail, setDetail }) {
-  const { useMemo } = react
-  const text = useMemo(() => JSON.stringify(detail, null, 2), [detail])
-  return react.createElement(
-    'div',
-    { style: SECTION_STYLE },
-    react.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
-      react.createElement('div', { style: { fontSize: 13, fontWeight: 600, flex: 1 } }, t.detailTitle),
-      react.createElement('button', { onClick: () => setDetail(null), style: buttonStyle() }, t.closeDetail),
-    ),
-    react.createElement(
-      'pre',
-      { style: { ...TEXTAREA_STYLE, height: 'auto', maxHeight: 320, overflow: 'auto', whiteSpace: 'pre-wrap', margin: 0 } },
-      text,
-    ),
-  )
-}
-
-function registerCard(ctx) {
+/* ── apply ────────────────────────────────────────────────────────────── */
+function apply(ctx) {
   if (typeof ctx.inject !== 'function') return
 
   const localeRef = { current: null }
   ctx.inject(['locale'], (scope) => {
-    // scope.locale is the locale service object; getLocale().active yields the
-    // active locale string ('zh'/'en'). Store the string, never the service.
     var localeSvc = scope.locale
     localeRef.current = localeSvc && typeof localeSvc.getLocale === 'function' ? localeSvc.getLocale().active : 'en'
     if (typeof localeSvc.subscribe === 'function') {
@@ -971,51 +845,44 @@ function registerCard(ctx) {
         localeRef.current = localeSvc && typeof localeSvc.getLocale === 'function' ? localeSvc.getLocale().active : 'en'
       })
       if (typeof scope.effect === 'function') {
-        scope.effect(
-          function() { return unsub },
-          'yeelight-smart-home: locale subscription',
-        )
+        scope.effect(function() { return unsub }, 'yeelight-smart-home: locale subscription')
       }
     }
   })
 
   ctx.inject(['slots'], (scope) => {
-    // Any response at all proves the host half exists; 404 means no web
-    // profile, so keep the card silent rather than erroring.
     fetch('/yeelight/config')
-      .then((response) => {
+      .then(function(response) {
         if (response.status === 404) return
-        mountCard(scope, localeRef)
+        mountSection(scope, localeRef)
       })
-      .catch(() => {})
+      .catch(function() {})
   })
 }
 
-function mountCard(ctx, localeRef) {
-  let react
+function mountSection(ctx, localeRef) {
+  var react
   try {
     react = require('react')
-  } catch (error) {
+  } catch (e) {
     return
   }
-  const Card = ConfigCard(react, localeRef)
-  ctx.slots.inject('settings.plugin.item', function* () {
-    yield ctx.slots.register(
-      { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
-      Card,
-    )
+
+  var Page = YeelightPage(react, localeRef)
+
+  ctx.slots.inject('settings.section', function* () {
+    yield ctx.slots.register({
+      name: 'settings.section',
+      id: 'yeelight-smart-home',
+      order: 16,
+      label: function() { return 'Yeelight 智能家居' },
+    }, Page)
   })
 }
 
-function apply(ctx) {
-  registerCard(ctx)
-}
-
-var module = { exports: {} };
-var exports = module.exports;
-Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-exports.apply = apply;
-exports.inject = [];
-// Exposed for the repo's tests only; not part of the plugin contract.
-exports.__card = { ConfigCard: ConfigCard, labels: labels };
-return module.exports;
+var module = { exports: {} }
+var exports = module.exports
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+exports.apply = apply
+exports.inject = []
+return module.exports

@@ -226,6 +226,35 @@ async function dispatch(req: IncomingMessage, res: ServerResponse, service: Rout
       send(res, 200, { ok: true, value: { requestId: newRequestId() } })
       return
     }
+    case '/yeelight/options': {
+      if (method !== 'GET') {
+        send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })
+        return
+      }
+      // Selectable options for the settings page: fixed catalogs the UI can
+      // render as <select> instead of free-text inputs.
+      send(res, 200, {
+        ok: true,
+        value: {
+          regions: [
+            { value: '', label: 'Default' },
+            { value: 'cn', label: 'China (cn)' },
+            { value: 'us', label: 'United States (us)' },
+            { value: 'eu', label: 'Europe (eu)' },
+            { value: 'sg', label: 'Singapore (sg)' },
+            { value: 'in', label: 'India (in)' },
+            { value: 'ru', label: 'Russia (ru)' },
+          ],
+          locales: [
+            { value: 'zh-CN', label: '简体中文 (zh-CN)' },
+            { value: 'en-US', label: 'English (en-US)' },
+            { value: 'zh-TW', label: '繁體中文 (zh-TW)' },
+            { value: 'ja-JP', label: '日本語 (ja-JP)' },
+          ],
+        },
+      })
+      return
+    }
     case '/yeelight/install-options': {
       if (method !== 'GET') {
         send(res, 405, { ok: false, error: { code: 'method_not_allowed', message: method } })
