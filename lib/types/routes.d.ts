@@ -23,6 +23,10 @@ export interface RouteService {
     };
     readonly patchConfig: (patch: Record<string, unknown>) => YeelightConfig;
     readonly resetConfig: () => YeelightConfig;
+    /** Debug only: the host settings.describe() result (namespaces), when reachable. */
+    readonly settingsDescribe?: () => Array<{
+        ns: string;
+    }>;
 }
 /** Register the /yeelight prefix route. */
 export declare function registerYeelightRoutes(webServer: WebServerSeam, service: RouteService): void;
