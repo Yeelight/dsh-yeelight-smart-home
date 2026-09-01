@@ -47,6 +47,15 @@ const TEXT = {
     authLoggedIn: 'signed in',
     authOut: 'not signed in',
     authHint: 'Run `yeelight-home auth login --qr` locally to sign in.',
+    authCopyCmd: 'Copy login command',
+    authCopied: 'Copied!',
+    authOpenTerminal: 'Open terminal and run',
+    authGuideTitle: 'Sign in to Yeelight',
+    authGuideDesc: 'Installation complete. Now sign in to your Yeelight account:',
+    authGuideStep1: '1. Open Terminal',
+    authGuideStep2: '2. Run: yeelight-home auth login --qr',
+    authGuideStep3: '3. Scan the QR code with your phone',
+    authGuideDone: 'After signing in, click Refresh to verify.',
     doctorLabel: 'Doctor',
     versionLabel: 'Version',
     binLabel: 'Binary',
@@ -124,6 +133,15 @@ const TEXT = {
     authLoggedIn: '已登录',
     authOut: '未登录',
     authHint: '请在本机运行 `yeelight-home auth login --qr` 完成登录。',
+    authCopyCmd: '复制登录命令',
+    authCopied: '已复制！',
+    authOpenTerminal: '打开终端并运行',
+    authGuideTitle: '登录 Yeelight 账号',
+    authGuideDesc: '安装完成。现在登录您的 Yeelight 账号：',
+    authGuideStep1: '1. 打开终端（Terminal）',
+    authGuideStep2: '2. 运行：yeelight-home auth login --qr',
+    authGuideStep3: '3. 用手机扫描二维码',
+    authGuideDone: '登录后点击「刷新」验证状态。',
     doctorLabel: '诊断',
     versionLabel: '版本',
     binLabel: '可执行文件',
@@ -427,7 +445,7 @@ function ConfigCard(react, localeRef) {
                   ? `${status.auth.authenticated ? t.authLoggedIn : t.authOut}${status.auth.authenticated && status.auth.tokenSource ? ` (${status.auth.tokenSource})` : ''}`
                   : `${t.authOut}${status.authError ? ` · ${status.authError}` : ''}`,
               ),
-              !status.auth || !status.auth.authenticated ? react.createElement('div', { style: HINT_STYLE }, t.authHint) : null,
+              !status.auth || !status.auth.authenticated ? authGuide(react, t) : null,
               react.createElement(
                 'details',
                 { style: { marginTop: 4 } },
@@ -545,6 +563,41 @@ function buttonStyle() {
     padding: '5px 12px',
     fontSize: 12,
   }
+}
+
+
+function authGuide(react, t) {
+  const { useState, useCallback } = react
+  const [copied, setCopied] = useState(false)
+  const copy = useCallback(() => {
+    try {
+      // Use the Clipboard API via the textarea trick for cross-browser safety
+      const ta = document.createElement('textarea')
+      ta.value = 'yeelight-home auth login --qr'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }, [])
+  return react.createElement('div', { style: { marginTop: 8, padding: 10, border: '1px solid var(--dsw-alias-state-warning-border, rgba(245,166,35,0.3))', borderRadius: 8, background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,0.04))' } },
+    react.createElement('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 6 } }, t.authGuideTitle),
+    react.createElement('div', { style: { fontSize: 12, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary, rgba(230,230,230,0.7))' } },
+      react.createElement('div', null, t.authGuideDesc),
+      react.createElement('div', { style: { marginTop: 4 } }, t.authGuideStep1),
+      react.createElement('div', { style: { margin: '4px 0', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 4, fontFamily: 'monospace', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 } },
+        react.createElement('span', { style: { flex: 1, wordBreak: 'break-all' } }, 'yeelight-home auth login --qr'),
+        react.createElement('button', {
+          onClick: () => void copy(),
+          style: { border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,0.3))', background: 'transparent', color: 'var(--dsw-alias-label-primary, #e6e6e6)', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11 },
+        }, copied ? t.authCopied : t.authCopyCmd),
+      ),
+      react.createElement('div', null, t.authGuideStep3),
+      react.createElement('div', { style: { marginTop: 6 } }, t.authGuideDone),
+    ),
+  )
 }
 
 
@@ -938,8 +991,8 @@ function mountCard(ctx, localeRef) {
     return
   }
   const Card = ConfigCard(react, localeRef)
-  ctx.slots.inject('settings.plugin.item', () => {
-    ctx.slots.register(
+  ctx.slots.inject('settings.plugin.item', function* () {
+    yield ctx.slots.register(
       { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
       Card,
     )
