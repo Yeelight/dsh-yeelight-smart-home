@@ -445,7 +445,7 @@ function ConfigCard(react, localeRef) {
                   ? `${status.auth.authenticated ? t.authLoggedIn : t.authOut}${status.auth.authenticated && status.auth.tokenSource ? ` (${status.auth.tokenSource})` : ''}`
                   : `${t.authOut}${status.authError ? ` · ${status.authError}` : ''}`,
               ),
-              !status.auth || !status.auth.authenticated ? authGuide(react, t) : null,
+              !status.auth || !status.auth.authenticated ? react.createElement(AuthGuide, { react, t }) : null,
               react.createElement(
                 'details',
                 { style: { marginTop: 4 } },
@@ -462,7 +462,7 @@ function ConfigCard(react, localeRef) {
               { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
               react.createElement('div', { style: { color: 'var(--dsw-alias-state-error-primary, #e5484d)', fontSize: 13 } }, t.statusMissing),
               react.createElement('div', { style: HINT_STYLE }, t.statusHint),
-              installGuide(react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy),
+              react.createElement(InstallGuide, { react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy }),
               react.createElement('div', { style: { marginTop: 4 } },
                 react.createElement('button', { onClick: () => void reloadStatus(), disabled: busy, style: buttonStyle() }, t.refresh),
               ),
@@ -566,7 +566,7 @@ function buttonStyle() {
 }
 
 
-function authGuide(react, t) {
+function AuthGuide({ react, t }) {
   const { useState, useCallback } = react
   const [copied, setCopied] = useState(false)
   const copy = useCallback(() => {
@@ -601,7 +601,7 @@ function authGuide(react, t) {
 }
 
 
-function installGuide(react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy) {
+function InstallGuide({ react, t, installOpts, installProgress, installing, loadInstallOptions, runInstall, reloadStatus, busy }) {
   const { useState, useEffect } = react
   const [loaded, setLoaded] = useState(false)
   useEffect(() => {
@@ -989,26 +989,26 @@ function registerCard(ctx) {
 }
 
 function mountCard(ctx, localeRef) {
-  console.error('[yeelight-card] mountCard entered')
+  try { window.__yeelightCardState = 'mountCard entered' } catch(e) {}
   let react
   try {
     react = require('react')
-    console.error('[yeelight-card] require(react) succeeded')
+    try { window.__yeelightCardState = 'require react ok' } catch(e) {}
   } catch (error) {
-    console.error(`[yeelight-smart-home] settings card skipped: ${error}`)
+    try { window.__yeelightCardState = 'require react failed: ' + String(error) } catch(e) {}
     return
   }
   const Card = ConfigCard(react, localeRef)
-  console.error('[yeelight-card] ConfigCard created, type:', typeof Card)
+  try { window.__yeelightCardState = 'ConfigCard created' } catch(e) {}
   ctx.slots.inject('settings.plugin.item', function* () {
-    console.error('[yeelight-card] slots.inject callback executed')
+    try { window.__yeelightCardState = 'slots.inject generator called' } catch(e) {}
     yield ctx.slots.register(
       { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
       Card,
     )
-    console.error('[yeelight-card] slots.register completed')
+    try { window.__yeelightCardState = 'slots.register completed' } catch(e) {}
   })
-  console.error('[yeelight-card] slots.inject returned')
+  try { window.__yeelightCardState = 'slots.inject returned' } catch(e) {}
 }
 
 function apply(ctx) {
