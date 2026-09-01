@@ -953,7 +953,8 @@ function DetailView({ react, t, detail, setDetail }) {
 }
 
 function registerCard(ctx) {
-  if (typeof ctx.inject !== 'function') return
+  console.error('[yeelight-card] registerCard called, typeof ctx.inject:', typeof ctx.inject)
+  if (typeof ctx.inject !== 'function') { console.error('[yeelight-card] ctx.inject not a function'); return }
 
   const localeRef = { current: null }
   ctx.inject(['locale'], (scope) => {
@@ -969,34 +970,45 @@ function registerCard(ctx) {
   })
 
   ctx.inject(['slots'], (scope) => {
+    console.error('[yeelight-card] ctx.inject([slots]) callback fired, typeof scope.slots:', typeof scope.slots)
     fetch('/yeelight/config')
       .then((response) => {
-        if (response.status === 404) return
+        console.error('[yeelight-card] fetch /yeelight/config status:', response.status)
+        if (response.status === 404) { console.error('[yeelight-card] 404 - skipping card mount'); return }
         try {
           mountCard(scope, localeRef)
+          console.error('[yeelight-card] mountCard completed')
         } catch (error) {
           console.error(`[yeelight-smart-home] settings card skipped: ${error instanceof Error ? error.message : String(error)}`)
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[yeelight-card] fetch /yeelight/config failed:', String(err))
+      })
   })
 }
 
 function mountCard(ctx, localeRef) {
+  console.error('[yeelight-card] mountCard entered')
   let react
   try {
     react = require('react')
+    console.error('[yeelight-card] require(react) succeeded')
   } catch (error) {
     console.error(`[yeelight-smart-home] settings card skipped: ${error}`)
     return
   }
   const Card = ConfigCard(react, localeRef)
+  console.error('[yeelight-card] ConfigCard created, type:', typeof Card)
   ctx.slots.inject('settings.plugin.item', function* () {
+    console.error('[yeelight-card] slots.inject callback executed')
     yield ctx.slots.register(
       { name: 'settings.plugin.item', id: 'yeelight-smart-home', key: 'yeelight-smart-home', order: 35 },
       Card,
     )
+    console.error('[yeelight-card] slots.register completed')
   })
+  console.error('[yeelight-card] slots.inject returned')
 }
 
 function apply(ctx) {
