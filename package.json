@@ -1,6 +1,6 @@
 {
   "name": "dsh-yeelight-smart-home",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DeepSeek Harness plugin: control, organize, diagnose, design, personalize, and answer product knowledge questions for a Yeelight smart home, powered by the local yeelight-home runtime.",
   "type": "module",
   "main": "lib/index.js",

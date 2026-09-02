@@ -7,19 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-02
+
 ### Added
 
-- One-click yeelight-home install guidance from the settings card:
-  - `GET /yeelight/install-options` — detect install channels (brew/npm/
-    scoop/download) available on the machine.
-  - `POST /yeelight/install` — run the install with progress reporting,
-    verify the binary afterwards, and support `dry_run` preview.
-  - Card UI: channel buttons + progress + result when the runtime is
-    missing.
-- `installRuntime` rejects unknown channels instead of falling back to
-  another installer.
+- **Promoted to a top-level settings section** — Yeelight now appears as an
+  independent settings page alongside 通用设置, 模型, 插件, etc., instead of
+  being a card inside the plugins tab.
+- **Modern settings page UI** — status banner (version, binary, auth, region),
+  authentication card, configuration card with `<select>` dropdowns for region
+  and locale, inline fields for house ID / profile / bin path, toggle switches,
+  and a formatted log view.
+- **`/yeelight/options` endpoint** — returns region and locale catalogs so the
+  client renders `<select>` pickers instead of free-text inputs.
 
-## [0.1.0] - 2025-08-31
+### Changed
+
+- Renamed `registerCard`/`mountCard` → `registerSection`/`mountSection`; slot
+  registration changed from `settings.plugin.item` to `settings.section`.
+
+### Fixed
+
+- **Settings card render crashes** — three root causes resolved:
+  - `labels()` received the locale service object instead of the locale string,
+    causing `.toLowerCase()` to throw on the service proxy.
+  - `keyValueRow(t, label, value)` used `react.createElement` without receiving
+    the `react` parameter (ReferenceError).
+  - One multi-line `keyValueRow` call site was missed by the batch fix, causing
+    `react.createElement is not a function` (TypeError).
+- **React error #31** (objects passed as React children) — `InvokeLogEntry`
+  objects are now formatted to readable strings before rendering.
+- **Locale injection** — stored the active locale string from
+  `locale.getLocale().active` instead of the locale service object.
+
+## [0.1.0] - 2026-08-31
 
 ### Added
 
